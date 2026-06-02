@@ -45,7 +45,7 @@ public final class HorizonKKQuestPlus extends JavaPlugin {
                 new QuestProgressListener(questManager), this);
 
         // 注册命令
-        QuestCommand cmd = new QuestCommand(questManager, configManager);
+        QuestCommand cmd = new QuestCommand(this, questManager, configManager);
         if (getCommand("horizonquest") != null) {
             getCommand("horizonquest").setExecutor(cmd);
             getCommand("horizonquest").setTabCompleter(cmd);

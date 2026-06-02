@@ -105,11 +105,11 @@ public class ConfigManager {
         // 加载菜单配置
         ConfigurationSection menuSec = yaml.getConfigurationSection("menu");
         if (menuSec != null) {
-            int line = menuSec.getInt("line", 27);
+            int size = menuSec.getInt("size", 27);
             int publicSlot = menuSec.getInt("public_slot", 11);
             int acceptedSlot = menuSec.getInt("accepted_slot", 13);
             int myPublishedSlot = menuSec.getInt("my_published_slot", 15);
-            menuConfig = new MenuConfig(line, publicSlot, acceptedSlot, myPublishedSlot);
+            menuConfig = new MenuConfig(size, publicSlot, acceptedSlot, myPublishedSlot);
         }
 
         // 公共悬赏定时配置

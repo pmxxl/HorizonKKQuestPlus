@@ -1,5 +1,6 @@
 package com.horizonkk.horizonKKQuestPlus.command;
 
+import com.horizonkk.horizonKKQuestPlus.HorizonKKQuestPlus;
 import com.horizonkk.horizonKKQuestPlus.gui.QuestMenuGUI;
 import com.horizonkk.horizonKKQuestPlus.manager.ConfigManager;
 import com.horizonkk.horizonKKQuestPlus.manager.QuestManager;
@@ -15,10 +16,13 @@ import java.util.List;
 
 public class QuestCommand implements CommandExecutor, TabCompleter {
 
+    private final HorizonKKQuestPlus plugin;
     private final QuestManager questManager;
     private final ConfigManager configManager;
 
-    public QuestCommand(QuestManager questManager, ConfigManager configManager) {
+    public QuestCommand(HorizonKKQuestPlus plugin, QuestManager questManager,
+                        ConfigManager configManager) {
+        this.plugin = plugin;
         this.questManager = questManager;
         this.configManager = configManager;
     }
@@ -30,15 +34,11 @@ public class QuestCommand implements CommandExecutor, TabCompleter {
                 sender.sendMessage("§c控制台无法打开悬赏菜单!");
                 return true;
             }
-            // 打开主菜单
             Player player = (Player) sender;
             questManager.checkExpiredQuests(player);
-            Bukkit.getScheduler().runTask(
-                    Bukkit.getPluginManager().getPlugin("HorizonKKQuestPlus"),
-                    () -> new QuestMenuGUI(
-                            (com.horizonkk.horizonKKQuestPlus.HorizonKKQuestPlus)
-                                    Bukkit.getPluginManager().getPlugin("HorizonKKQuestPlus"),
-                            questManager, configManager, player).open());
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                new QuestMenuGUI(plugin, questManager, configManager, player).open();
+            });
             return true;
         }
 
@@ -73,12 +73,9 @@ public class QuestCommand implements CommandExecutor, TabCompleter {
                     target = (Player) sender;
                 }
                 final Player finalTarget = target;
-                Bukkit.getScheduler().runTask(
-                        Bukkit.getPluginManager().getPlugin("HorizonKKQuestPlus"),
-                        () -> new QuestMenuGUI(
-                                (com.horizonkk.horizonKKQuestPlus.HorizonKKQuestPlus)
-                                        Bukkit.getPluginManager().getPlugin("HorizonKKQuestPlus"),
-                                questManager, configManager, finalTarget).open());
+                Bukkit.getScheduler().runTask(plugin, () -> {
+                    new QuestMenuGUI(plugin, questManager, configManager, finalTarget).open();
+                });
                 sender.sendMessage("§a已为 " + target.getName() + " 打开悬赏菜单");
                 break;
 
