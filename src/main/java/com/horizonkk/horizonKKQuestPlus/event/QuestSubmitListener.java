@@ -11,6 +11,7 @@ import com.horizonkk.horizonKKQuestPlus.manager.QuestManager;
 import com.horizonkk.horizonKKQuestPlus.model.QuestInstance;
 import com.horizonkk.horizonKKQuestPlus.model.QuestStatus;
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -138,7 +139,7 @@ public class QuestSubmitListener implements Listener {
         // 遍历背包中的所有物品
         for (int i = 0; i < inventory.getSize() && remaining > 0; i++) {
             ItemStack item = inventory.getItem(i);
-            if (item == null || item.getType().isEmpty()) continue;
+            if (item == null || item.getType() == Material.AIR) continue;
 
             // 检查是否是 NI 物品
             String playerItemId = NeigeitemsHook.getSafeItemId(item);
@@ -194,7 +195,7 @@ public class QuestSubmitListener implements Listener {
     private int countItemsInInventory(Player player, String itemId) {
         int count = 0;
         for (ItemStack item : player.getInventory().getContents()) {
-            if (item == null || item.getType().isEmpty()) continue;
+            if (item == null || item.getType() == Material.AIR) continue;
             String playerItemId = NeigeitemsHook.getSafeItemId(item);
             if (itemId.equals(playerItemId)) {
                 count += item.getAmount();

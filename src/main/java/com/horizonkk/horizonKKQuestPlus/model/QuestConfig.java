@@ -1,9 +1,6 @@
 package com.horizonkk.horizonKKQuestPlus.model;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * 悬赏任务模板配置 — 从 Quests/*.yml 加载
