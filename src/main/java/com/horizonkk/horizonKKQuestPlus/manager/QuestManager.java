@@ -49,14 +49,12 @@ public class QuestManager {
         }
 
         String questId = UUID.randomUUID().toString().substring(0, 8);
-        long now = System.currentTimeMillis();
-        long expireTime = template.getTimeLimit() > 0
-                ? now + template.getTimeLimit() * 1000L
-                : 0;
-
         String displayName = anonymous ? "匿名修士" : player.getName();
         QuestInstance instance = new QuestInstance(questId, templateId, displayName,
-                player.getUniqueId(), now, expireTime, false, anonymous);
+                player.getUniqueId(), false, anonymous);
+
+        // 设置游戏日历过期时间
+        instance.setExpireInDays(template.getTimeLimit());
 
         allQuests.put(questId, instance);
         playerDataManager.addPublishedQuest(player.getUniqueId(), instance);
@@ -83,17 +81,16 @@ public class QuestManager {
         Collections.shuffle(templateIds);
         int count = Math.min(configManager.getPublicQuestCount(), templateIds.size());
 
-        long now = System.currentTimeMillis();
         for (int i = 0; i < count; i++) {
             String templateId = templateIds.get(i);
             QuestConfig template = configManager.getQuestTemplate(templateId);
             if (template == null) continue;
 
             String questId = "PUB-" + UUID.randomUUID().toString().substring(0, 6);
-            long expireTime = now + configManager.getPublicQuestInterval() * 1000L;
 
             QuestInstance instance = new QuestInstance(questId, templateId, "匿名修士",
-                    null, now, expireTime, true, true);
+                    null, true, true);
+            instance.setExpireInDays(template.getTimeLimit());
 
             allQuests.put(questId, instance);
             publicQuestPool.add(instance);
@@ -159,15 +156,14 @@ public class QuestManager {
             return false;
         }
 
-        long now = System.currentTimeMillis();
         instance.setAccepterName(player.getName());
         instance.setAccepterUuid(player.getUniqueId());
-        instance.setAcceptTime(now);
+        instance.markAccepted();
         instance.setStatus(QuestStatus.ACCEPTED);
 
-        // 如果有时间限制，更新过期时间
+        // 如果有时间限制，接取后重新计算过期时间
         if (template.getTimeLimit() > 0) {
-            instance.setExpireTime(now + template.getTimeLimit() * 1000L);
+            instance.setExpireInDays(template.getTimeLimit());
         }
 
         playerDataManager.addAcceptedQuest(player.getUniqueId(), instance);
@@ -325,8 +321,9 @@ public class QuestManager {
         lore.add("");
         lore.add(colorize("&7悬赏ID: &f" + instance.getQuestId()));
         lore.add(colorize("&7类型: &f" + template.getType().getDisplayName()));
+        lore.add(colorize("&7发布时间: &f" + instance.getPublishTimeDisplay()));
         if (template.getTimeLimit() > 0) {
-            lore.add(colorize("&7时限: &f" + formatTime(template.getTimeLimit())));
+            lore.add(colorize("&7过期时间: &f" + instance.getExpireTimeDisplay()));
         }
 
         return NeigeitemsHook.buildCustomItem(itemConfig.getCustomModel(), name, lore);
@@ -352,12 +349,6 @@ public class QuestManager {
     }
 
     // ==================== 工具 ====================
-
-    private String formatTime(int seconds) {
-        if (seconds < 60) return seconds + "秒";
-        if (seconds < 3600) return (seconds / 60) + "分" + (seconds % 60) + "秒";
-        return (seconds / 3600) + "时" + ((seconds % 3600) / 60) + "分";
-    }
 
     private String colorize(String s) {
         if (s == null) return "";

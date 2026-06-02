@@ -76,8 +76,9 @@ public class IconBuilder {
             lore.add(colorize("&7接取人: &f" + instance.getAccepterName()));
         }
 
-        if (template.getTimeLimit() > 0) {
-            lore.add(colorize("&7时限: &f" + formatTime(template.getTimeLimit())));
+        lore.add(colorize("&7发布: &f" + instance.getPublishTimeDisplay()));
+        if (instance.getExpireYear() > 0) {
+            lore.add(colorize("&7过期: &f" + instance.getExpireTimeDisplay()));
         }
 
         // 进度条 (如果已接取)
@@ -137,7 +138,7 @@ public class IconBuilder {
             lore.add(colorize("&7等级: &f" + template.getLevel().getDisplayName()));
             lore.add(colorize("&7目标: &f" + template.getTarget() + " ×" + template.getTargetAmount()));
             if (template.getTimeLimit() > 0) {
-                lore.add(colorize("&7时限: &f" + formatTime(template.getTimeLimit())));
+                lore.add(colorize("&7时限: &f" + template.getTimeLimit() + "天(游戏时间)"));
             }
             lore.add(colorize("&7━━━━━━━━━━━━━━"));
             lore.add(colorize("&7" + template.getDescription()));
@@ -215,12 +216,6 @@ public class IconBuilder {
             case CANCELLED: return "已取消";
             default:        return status.name();
         }
-    }
-
-    private static String formatTime(int seconds) {
-        if (seconds < 60) return seconds + "秒";
-        if (seconds < 3600) return (seconds / 60) + "分" + (seconds % 60) + "秒";
-        return (seconds / 3600) + "时" + ((seconds % 3600) / 60) + "分";
     }
 
     private static String colorize(String s) {

@@ -109,9 +109,19 @@ public class PlayerDataManager {
         map.put("accepter_uuid", inst.getAccepterUuid() != null ? inst.getAccepterUuid().toString() : null);
         map.put("status", inst.getStatus().name());
         map.put("progress", inst.getProgress());
-        map.put("publish_time", inst.getPublishTime());
-        map.put("accept_time", inst.getAcceptTime());
-        map.put("expire_time", inst.getExpireTime());
+        // 日历时间
+        map.put("publish_year", inst.getPublishYear());
+        map.put("publish_month", inst.getPublishMonth());
+        map.put("publish_day", inst.getPublishDay());
+        map.put("publish_hour", inst.getPublishHour());
+        map.put("accept_year", inst.getAcceptYear());
+        map.put("accept_month", inst.getAcceptMonth());
+        map.put("accept_day", inst.getAcceptDay());
+        map.put("accept_hour", inst.getAcceptHour());
+        map.put("expire_year", inst.getExpireYear());
+        map.put("expire_month", inst.getExpireMonth());
+        map.put("expire_day", inst.getExpireDay());
+        map.put("expire_hour", inst.getExpireHour());
         map.put("is_public", inst.isPublic());
         map.put("is_anonymous", inst.isAnonymous());
         return map;
@@ -125,13 +135,20 @@ public class PlayerDataManager {
         String pubUuidStr = (String) map.get("publisher_uuid");
         UUID publisherUuid = pubUuidStr != null ? UUID.fromString(pubUuidStr) : null;
 
-        long publishTime = getLong(map, "publish_time");
-        long expireTime = getLong(map, "expire_time");
         boolean isPublic = getBoolean(map, "is_public");
         boolean isAnonymous = getBoolean(map, "is_anonymous");
 
         QuestInstance inst = new QuestInstance(questId, templateId, publisherName,
-                publisherUuid, publishTime, expireTime, isPublic, isAnonymous);
+                publisherUuid, isPublic, isAnonymous);
+
+        // 恢复日历时间
+        inst.setCalendarFields(
+                getInt(map, "publish_year"), getInt(map, "publish_month"),
+                getInt(map, "publish_day"), getInt(map, "publish_hour"),
+                getInt(map, "accept_year"), getInt(map, "accept_month"),
+                getInt(map, "accept_day"), getInt(map, "accept_hour"),
+                getInt(map, "expire_year"), getInt(map, "expire_month"),
+                getInt(map, "expire_day"), getInt(map, "expire_hour"));
 
         inst.setAccepterName((String) map.get("accepter_name"));
         String accUuidStr = (String) map.get("accepter_uuid");
@@ -141,7 +158,6 @@ public class PlayerDataManager {
         if (statusStr != null) inst.setStatus(QuestStatus.valueOf(statusStr));
 
         inst.setProgress(getInt(map, "progress"));
-        inst.setAcceptTime(getLong(map, "accept_time"));
 
         return inst;
     }

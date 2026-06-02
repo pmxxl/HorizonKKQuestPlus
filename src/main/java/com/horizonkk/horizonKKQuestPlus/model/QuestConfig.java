@@ -16,7 +16,7 @@ public class QuestConfig {
     private final String target;           // 目标: 根据type不同含义不同
     private final int targetAmount;        // 目标数量
     private final List<RewardInfo> rewards; // 奖励列表
-    private final int timeLimit;           // 时间限制(秒), 0=无限制
+    private final int timeLimit;           // 时间限制(游戏天数), 0=无限制
     private final String description;      // 任务描述文本
     private final boolean repeatable;      // 是否可重复接取
     private final Map<String, String> messages; // 自定义消息
