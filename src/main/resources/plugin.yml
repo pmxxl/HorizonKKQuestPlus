@@ -9,7 +9,7 @@ softdepend: [ NeigeItems, TYLcalendarPlus ]
 commands:
   horizonquest:
     description: HorizonKKQuestPlus 主命令
-    usage: /<command> <reload|open <玩家>|publish <模板ID>|list>
+    usage: /<command> <reload|open <玩家>|publish <模板ID>|list|test>
     aliases: [quest, hkq]
 
 permissions:

@@ -41,6 +41,12 @@ public class ConfigManager {
     private int randomCollectMaxAmount = 50;
     private int randomCollectCount = 2;
 
+    // 等级权重
+    private final Map<QuestLevel, Integer> levelWeights = new LinkedHashMap<>();
+
+    // 任务模板库 {等级 → 模板列表}
+    private final Map<QuestLevel, List<QuestTemplate>> questTemplatesByLevel = new LinkedHashMap<>();
+
     public ConfigManager(HorizonKKQuestPlus plugin) {
         this.plugin = plugin;
     }
@@ -142,6 +148,23 @@ public class ConfigManager {
             randomCollectMinAmount = randomCollectSec.getInt("min_amount", 5);
             randomCollectMaxAmount = randomCollectSec.getInt("max_amount", 50);
             randomCollectCount = randomCollectSec.getInt("count", 2);
+
+            // 加载等级权重
+            ConfigurationSection weightsSec = randomCollectSec.getConfigurationSection("level_weights");
+            if (weightsSec != null) {
+                for (QuestLevel level : QuestLevel.values()) {
+                    int weight = weightsSec.getInt(level.name().toLowerCase(), 0);
+                    levelWeights.put(level, weight);
+                }
+            }
+        }
+
+        // 如果没有配置权重，使用默认权重
+        if (levelWeights.isEmpty()) {
+            levelWeights.put(QuestLevel.HUMAN, 40);
+            levelWeights.put(QuestLevel.MYSTERY, 30);
+            levelWeights.put(QuestLevel.EARTH, 20);
+            levelWeights.put(QuestLevel.SKY, 10);
         }
 
         // 加载价值定义
@@ -172,6 +195,87 @@ public class ConfigManager {
                 }
             }
         }
+
+        // 加载任务模板配置
+        loadQuestTemplates(yaml);
+    }
+
+    /**
+     * 加载任务模板配置
+     */
+    private void loadQuestTemplates(YamlConfiguration yaml) {
+        questTemplatesByLevel.clear();
+
+        ConfigurationSection templatesSec = yaml.getConfigurationSection("quest_templates");
+        if (templatesSec == null) {
+            plugin.getLogger().warning("未找到 quest_templates 配置");
+            return;
+        }
+
+        for (QuestLevel level : QuestLevel.values()) {
+            String levelKey = level.name().toLowerCase();
+            ConfigurationSection levelSec = templatesSec.getConfigurationSection(levelKey);
+            if (levelSec == null) {
+                continue;
+            }
+
+            List<QuestTemplate> templates = new ArrayList<>();
+            for (Object item : levelSec.getList(levelKey, Collections.emptyList())) {
+                if (item instanceof Map) {
+                    try {
+                        QuestTemplate template = parseQuestTemplate(level, (Map<String, Object>) item);
+                        if (template != null) {
+                            templates.add(template);
+                        }
+                    } catch (Exception e) {
+                        plugin.getLogger().warning("解析任务模板失败: " + levelKey + " - " + e.getMessage());
+                    }
+                }
+            }
+
+            questTemplatesByLevel.put(level, templates);
+            plugin.getLogger().info("加载 " + level.getDisplayName() + " 模板: " + templates.size() + " 个");
+        }
+    }
+
+    /**
+     * 解析单个任务模板
+     */
+    private QuestTemplate parseQuestTemplate(QuestLevel level, Map<String, Object> map) {
+        String templateId = (String) map.get("id");
+        if (templateId == null || templateId.isEmpty()) {
+            return null;
+        }
+
+        // 解析物品列表
+        Map<String, QuestTemplate.ItemRange> itemRanges = new LinkedHashMap<>();
+        Object itemsObj = map.get("items");
+        if (itemsObj instanceof Map) {
+            Map<String, Object> itemsMap = (Map<String, Object>) itemsObj;
+            for (Map.Entry<String, Object> entry : itemsMap.entrySet()) {
+                String itemId = entry.getKey();
+                if (entry.getValue() instanceof Map) {
+                    Map<String, Object> rangeMap = (Map<String, Object>) entry.getValue();
+                    int min = ((Number) rangeMap.get("min")).intValue();
+                    int max = ((Number) rangeMap.get("max")).intValue();
+                    itemRanges.put(itemId, new QuestTemplate.ItemRange(min, max));
+                }
+            }
+        }
+
+        // 解析价值区间
+        int minValue = 0;
+        int maxValue = Integer.MAX_VALUE;
+        Object rangeObj = map.get("value_range");
+        if (rangeObj instanceof List) {
+            List<?> rangeList = (List<?>) rangeObj;
+            if (rangeList.size() >= 2) {
+                minValue = ((Number) rangeList.get(0)).intValue();
+                maxValue = ((Number) rangeList.get(1)).intValue();
+            }
+        }
+
+        return new QuestTemplate(templateId, level, itemRanges, minValue, maxValue);
     }
 
     /**
@@ -395,5 +499,49 @@ public class ConfigManager {
 
     public int getValueDefinition(String key) {
         return valueDefinitions.getOrDefault(key, 0);
+    }
+
+    // ==================== 模板配置 ====================
+
+    public Map<QuestLevel, List<QuestTemplate>> getQuestTemplatesByLevel() {
+        return questTemplatesByLevel;
+    }
+
+    public List<QuestTemplate> getQuestTemplates(QuestLevel level) {
+        return questTemplatesByLevel.getOrDefault(level, Collections.emptyList());
+    }
+
+    public Map<QuestLevel, Integer> getLevelWeights() {
+        return levelWeights;
+    }
+
+    public int getLevelWeight(QuestLevel level) {
+        return levelWeights.getOrDefault(level, 0);
+    }
+
+    /**
+     * 根据权重随机选择一个等级
+     */
+    public QuestLevel getRandomLevelByWeight() {
+        int totalWeight = 0;
+        for (int weight : levelWeights.values()) {
+            totalWeight += weight;
+        }
+
+        if (totalWeight <= 0) {
+            return QuestLevel.HUMAN;
+        }
+
+        int randomWeight = new Random().nextInt(totalWeight);
+        int currentWeight = 0;
+
+        for (Map.Entry<QuestLevel, Integer> entry : levelWeights.entrySet()) {
+            currentWeight += entry.getValue();
+            if (randomWeight < currentWeight) {
+                return entry.getKey();
+            }
+        }
+
+        return QuestLevel.HUMAN;
     }
 }
