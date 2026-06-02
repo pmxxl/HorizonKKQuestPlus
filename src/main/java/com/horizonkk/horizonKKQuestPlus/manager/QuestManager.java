@@ -188,7 +188,9 @@ public class QuestManager {
             itemNames.put(itemId, getItemDisplayName(itemId));
         }
 
-        // 生成任务描述
+        // 生成任务描述（多行）
+        List<String> descriptionLines = requirement.buildDescriptionList(itemNames);
+        // 单行描述（用于兼容）
         String description = requirement.buildDescription(itemNames);
 
         // 构建目标字符串 (多个物品用逗号分隔)
@@ -204,12 +206,14 @@ public class QuestManager {
                 rewards,
                 7, // 7天时间限制
                 description,
+                descriptionLines, // 多行描述
                 true, // 可重复
                 null
         );
 
         // 将任务配置存储到 configManager 中，以便后续查找
         configManager.addQuestTemplate(questId, questConfig);
+        plugin.getLogger().info("[DEBUG] 已存储随机收集任务模板: " + questId);
 
         // 创建任务实例
         QuestInstance instance = new QuestInstance(questId, questId, "系统悬赏",
@@ -323,11 +327,18 @@ public class QuestManager {
     }
 
     private boolean doAccept(Player player, QuestInstance instance) {
-        QuestConfig template = configManager.getQuestTemplate(instance.getTemplateId());
+        String templateId = instance.getTemplateId();
+        plugin.getLogger().info("[DEBUG] 尝试接取任务，模板ID: " + templateId);
+        plugin.getLogger().info("[DEBUG] 可用模板IDs: " + configManager.getQuestTemplateIds());
+
+        QuestConfig template = configManager.getQuestTemplate(templateId);
         if (template == null) {
+            plugin.getLogger().warning("[DEBUG] 模板未找到: " + templateId);
             player.sendMessage("§c任务模板丢失!");
             return false;
         }
+
+        plugin.getLogger().info("[DEBUG] 模板找到: " + template.getId());
 
         instance.setAccepterName(player.getName());
         instance.setAccepterUuid(player.getUniqueId());
@@ -496,27 +507,36 @@ public class QuestManager {
         plugin.getLogger().info("[DEBUG] 灵石类型: " + configManager.getStoneTypes());
         plugin.getLogger().info("[DEBUG] 奖励列表: " + rewardList);
 
+        // 获取任务描述（多行）
+        List<String> descriptionLines = template.getDescriptionLinesList();
+
         // 构建最终lore
         List<String> lore = new ArrayList<>();
         boolean rewardInserted = false;
+        boolean textInserted = false;
 
         // 遍历原始lore模板（包含&颜色代码）
         for (String line : itemConfig.getLore()) {
+            // 检查是否包含 {text} 占位符
+            if (line.contains("{text}") && !textInserted) {
+                // 替换占位符为描述列表
+                for (String descLine : descriptionLines) {
+                    lore.add(colorize(descLine));
+                }
+                textInserted = true;
+            }
             // 检查是否包含 {reward} 占位符
-            if (line.contains("{reward}") && !rewardInserted) {
-                plugin.getLogger().info("[DEBUG] 找到 {reward} 占位符，行内容: " + line);
+            else if (line.contains("{reward}") && !rewardInserted) {
                 // 替换占位符为奖励列表
                 for (String rewardLine : rewardList) {
-                    String colorized = colorize(rewardLine);
-                    plugin.getLogger().info("[DEBUG] 奖励行: " + rewardLine + " -> " + colorized);
-                    lore.add(colorized);
+                    lore.add(colorize(rewardLine));
                 }
                 rewardInserted = true;
-            } else if (!line.contains("{reward}")) {
+            }
+            // 其他行
+            else if (!line.contains("{text}") && !line.contains("{reward}")) {
                 // 替换其他占位符并colorize
-                String processed = line
-                        .replace("{player}", displayName)
-                        .replace("{text}", template.getDescription());
+                String processed = line.replace("{player}", displayName);
                 lore.add(colorize(processed));
             }
         }

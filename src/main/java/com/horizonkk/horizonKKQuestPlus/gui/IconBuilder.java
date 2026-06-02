@@ -64,24 +64,36 @@ public class IconBuilder {
         // 获取奖励列表（每行一个奖励）
         List<String> rewardList = template.buildRewardTextList(configManager.getStoneTypes());
 
+        // 获取任务描述（多行）
+        List<String> descriptionLines = template.getDescriptionLinesList();
+
         // 构建最终lore
         List<String> lore = new ArrayList<>();
         boolean rewardInserted = false;
+        boolean textInserted = false;
 
         // 遍历原始lore模板（包含&颜色代码）
         for (String line : itemConfig.getLore()) {
+            // 检查是否包含 {text} 占位符
+            if (line.contains("{text}") && !textInserted) {
+                // 替换占位符为描述列表
+                for (String descLine : descriptionLines) {
+                    lore.add(colorize(descLine));
+                }
+                textInserted = true;
+            }
             // 检查是否包含 {reward} 占位符
-            if (line.contains("{reward}") && !rewardInserted) {
+            else if (line.contains("{reward}") && !rewardInserted) {
                 // 替换占位符为奖励列表
                 for (String rewardLine : rewardList) {
                     lore.add(colorize(rewardLine));
                 }
                 rewardInserted = true;
-            } else if (!line.contains("{reward}")) {
+            }
+            // 其他行
+            else if (!line.contains("{text}") && !line.contains("{reward}")) {
                 // 替换其他占位符并colorize
-                String processed = line
-                        .replace("{player}", instance.getDisplayPublisherName())
-                        .replace("{text}", template.getDescription());
+                String processed = line.replace("{player}", instance.getDisplayPublisherName());
                 lore.add(colorize(processed));
             }
         }

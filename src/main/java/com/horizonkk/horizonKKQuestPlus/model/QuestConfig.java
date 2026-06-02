@@ -17,13 +17,28 @@ public class QuestConfig {
     private final int targetAmount;        // 目标数量
     private final List<RewardInfo> rewards; // 奖励列表
     private final int timeLimit;           // 时间限制(游戏天数), 0=无限制
-    private final String description;      // 任务描述文本
+    private final String description;      // 任务描述文本（单行）
+    private final List<String> descriptionLines; // 任务描述列表（多行）
     private final boolean repeatable;      // 是否可重复接取
     private final Map<String, String> messages; // 自定义消息
 
+    /**
+     * 构造函数（单行描述）
+     */
     public QuestConfig(String id, QuestType type, QuestLevel level, String target,
                        int targetAmount, List<RewardInfo> rewards, int timeLimit,
                        String description, boolean repeatable, Map<String, String> messages) {
+        this(id, type, level, target, targetAmount, rewards, timeLimit,
+                description, null, repeatable, messages);
+    }
+
+    /**
+     * 构造函数（支持多行描述）
+     */
+    public QuestConfig(String id, QuestType type, QuestLevel level, String target,
+                       int targetAmount, List<RewardInfo> rewards, int timeLimit,
+                       String description, List<String> descriptionLines,
+                       boolean repeatable, Map<String, String> messages) {
         this.id = id;
         this.type = type;
         this.level = level;
@@ -32,6 +47,7 @@ public class QuestConfig {
         this.rewards = rewards != null ? rewards : Collections.emptyList();
         this.timeLimit = timeLimit;
         this.description = description != null ? description : "";
+        this.descriptionLines = descriptionLines != null ? descriptionLines : Collections.emptyList();
         this.repeatable = repeatable;
         this.messages = messages != null ? messages : Collections.emptyMap();
     }
@@ -44,8 +60,23 @@ public class QuestConfig {
     public List<RewardInfo> getRewards() { return rewards; }
     public int getTimeLimit() { return timeLimit; }
     public String getDescription() { return description; }
+    public List<String> getDescriptionLines() { return descriptionLines; }
     public boolean isRepeatable() { return repeatable; }
     public Map<String, String> getMessages() { return messages; }
+
+    /**
+     * 获取描述列表（优先返回多行描述，否则返回单行描述的列表）
+     */
+    public List<String> getDescriptionLinesList() {
+        if (descriptionLines != null && !descriptionLines.isEmpty()) {
+            return descriptionLines;
+        }
+        List<String> lines = new ArrayList<>();
+        if (description != null && !description.isEmpty()) {
+            lines.add(description);
+        }
+        return lines;
+    }
 
     public String getMessage(String key) {
         return messages.getOrDefault(key, "");
