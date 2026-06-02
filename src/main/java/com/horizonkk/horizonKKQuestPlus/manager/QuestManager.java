@@ -51,7 +51,7 @@ public class QuestManager {
         String questId = UUID.randomUUID().toString().substring(0, 8);
         String displayName = anonymous ? "匿名修士" : player.getName();
         QuestInstance instance = new QuestInstance(questId, templateId, displayName,
-                player.getUniqueId(), false, anonymous);
+                player.getUniqueId(), true, anonymous);
 
         // 设置游戏日历过期时间
         instance.setExpireInDays(template.getTimeLimit());
