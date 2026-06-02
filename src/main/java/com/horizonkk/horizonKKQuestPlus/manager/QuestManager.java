@@ -331,6 +331,75 @@ public class QuestManager {
 
         plugin.getLogger().info("[DEBUG] 模板找到: " + template.getId());
 
+        // 计算并扣除手续费
+        if (configManager.isAcceptFeeEnabled()) {
+            double feeRate = configManager.getAcceptFeeRate();
+
+            // 获取奖励灵石列表
+            List<RewardInfo> rewards = template.getRewards();
+            Map<String, Integer> rewardStoneMap = new LinkedHashMap<>();
+
+            // 构建奖励灵石组合
+            for (RewardInfo reward : rewards) {
+                if (reward.hasStone()) {
+                    rewardStoneMap.put(reward.getStoneKey(), reward.getStoneAmount());
+                }
+            }
+
+            // 计算手续费
+            int totalValue = StoneConverter.calculateTotalValue(rewardStoneMap);
+            int feeValue = StoneConverter.calculateFee(totalValue, feeRate);
+
+            if (feeValue > 0) {
+                // 检查玩家是否有足够的灵石支付手续费
+                Map<String, Integer> feeStoneMap = StoneConverter.calculateFeeStoneMap(rewardStoneMap, feeRate);
+
+                // TODO: 检查玩家背包中是否有足够的灵石
+                // 这里简化处理，直接从奖励中扣除手续费
+
+                // 扣除手续费后的奖励
+                Map<String, Integer> newRewardMap = StoneConverter.deductFee(rewardStoneMap, feeRate);
+
+                // 更新任务奖励
+                List<RewardInfo> newRewards = new ArrayList<>();
+                for (Map.Entry<String, Integer> entry : newRewardMap.entrySet()) {
+                    newRewards.add(new RewardInfo(entry.getKey(), entry.getValue(), null, 0, null));
+                }
+
+                // 创建新的任务配置（带手续费扣除后的奖励）
+                QuestConfig newTemplate = new QuestConfig(
+                        template.getId(),
+                        template.getType(),
+                        template.getLevel(),
+                        template.getTarget(),
+                        template.getTargetAmount(),
+                        newRewards,
+                        template.getTimeLimit(),
+                        template.getDescription(),
+                        template.getDescriptionLines(),
+                        template.isRepeatable(),
+                        template.getMessages()
+                );
+
+                // 存储新的任务配置
+                configManager.addQuestTemplate(templateId, newTemplate);
+
+                // 更新模板引用
+                template = newTemplate;
+
+                // 通知玩家手续费扣除
+                Map<String, Integer> feeDisplay = StoneConverter.convertFromLow(feeValue);
+                StringBuilder feeMsg = new StringBuilder("&7接取手续费: ");
+                boolean first = true;
+                for (Map.Entry<String, Integer> entry : feeDisplay.entrySet()) {
+                    if (!first) feeMsg.append("&7, ");
+                    feeMsg.append("&f").append(getStoneDisplayName(entry.getKey())).append(" &a×").append(entry.getValue());
+                    first = false;
+                }
+                player.sendMessage(colorize(feeMsg.toString()));
+            }
+        }
+
         instance.setAccepterName(player.getName());
         instance.setAccepterUuid(player.getUniqueId());
         instance.markAccepted();
@@ -443,6 +512,25 @@ public class QuestManager {
                 }
             }
         }
+    }
+
+    /**
+     * 获取灵石的显示名称
+     *
+     * @param stoneKey 灵石key
+     * @return 灵石显示名称
+     */
+    private String getStoneDisplayName(String stoneKey) {
+        String stoneItemId = configManager.getStoneTypes().get(stoneKey);
+        if (stoneItemId != null) {
+            // 尝试从 NI 获取物品显示名称
+            ItemStack item = NeigeitemsHook.getItemStack(stoneItemId, null);
+            if (item != null && item.hasItemMeta() && item.getItemMeta().hasDisplayName()) {
+                return item.getItemMeta().getDisplayName();
+            }
+            return stoneItemId;
+        }
+        return stoneKey;
     }
 
     // ==================== 取消/过期 ====================

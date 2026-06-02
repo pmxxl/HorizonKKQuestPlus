@@ -52,6 +52,10 @@ public class ConfigManager {
     private double rewardMultiplierMin = 0.7;
     private double rewardMultiplierMax = 1.3;
 
+    // 接取任务手续费
+    private boolean acceptFeeEnabled = true;
+    private double acceptFeeRate = 0.08;
+
     public ConfigManager(HorizonKKQuestPlus plugin) {
         this.plugin = plugin;
     }
@@ -123,6 +127,16 @@ public class ConfigManager {
         }
         if (rewardMultiplierEnabled) {
             plugin.getLogger().info("奖励浮动倍率已启用 - 范围: " + rewardMultiplierMin + " ~ " + rewardMultiplierMax);
+        }
+
+        // 加载接取任务手续费
+        ConfigurationSection feeSec = yaml.getConfigurationSection("accept_fee");
+        if (feeSec != null) {
+            acceptFeeEnabled = feeSec.getBoolean("enabled", true);
+            acceptFeeRate = feeSec.getDouble("rate", 0.08);
+        }
+        if (acceptFeeEnabled) {
+            plugin.getLogger().info("接取任务手续费已启用 - 费率: " + (acceptFeeRate * 100) + "%");
         }
 
         // 加载悬赏令物品外观
@@ -606,5 +620,15 @@ public class ConfigManager {
             return 1.0;
         }
         return rewardMultiplierMin + (rewardMultiplierMax - rewardMultiplierMin) * Math.random();
+    }
+
+    // ==================== 接取任务手续费 ====================
+
+    public boolean isAcceptFeeEnabled() {
+        return acceptFeeEnabled;
+    }
+
+    public double getAcceptFeeRate() {
+        return acceptFeeRate;
     }
 }

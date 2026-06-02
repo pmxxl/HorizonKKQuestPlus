@@ -203,4 +203,83 @@ public class StoneConverter {
         // amount 已经是以下品灵石为单位的价值，直接转换
         return convertFromLow(amount);
     }
+
+    /**
+     * 计算灵石组合的总价值（以下品灵石为单位）
+     *
+     * @param stoneMap 灵石组合 {灵石key → 数量}
+     * @return 总价值（以下品灵石为单位）
+     */
+    public static int calculateTotalValue(Map<String, Integer> stoneMap) {
+        int total = 0;
+        for (Map.Entry<String, Integer> entry : stoneMap.entrySet()) {
+            total += getStoneValue(entry.getKey()) * entry.getValue();
+        }
+        return total;
+    }
+
+    /**
+     * 计算手续费（以下品灵石为单位）
+     *
+     * @param totalValue 总价值
+     * @param feeRate    手续费率（例如 0.08 表示 8%）
+     * @return 手续费（向下取整）
+     */
+    public static int calculateFee(int totalValue, double feeRate) {
+        return (int) Math.floor(totalValue * feeRate);
+    }
+
+    /**
+     * 从灵石组合中扣除指定价值（以下品灵石为单位）
+     * 优先从低品灵石扣除，不足时从高品灵石扣除并找回零钱
+     *
+     * @param stoneMap   灵石组合 {灵石key → 数量}
+     * @param deductValue 要扣除的价值（以下品灵石为单位）
+     * @return 扣除后的灵石组合
+     */
+    public static Map<String, Integer> deductFromStoneMap(Map<String, Integer> stoneMap, int deductValue) {
+        if (deductValue <= 0) {
+            return new LinkedHashMap<>(stoneMap);
+        }
+
+        // 先转换为下品灵石总数
+        int totalLow = calculateTotalValue(stoneMap);
+
+        // 扣除手续费
+        int remainingLow = totalLow - deductValue;
+
+        // 如果扣除后为负数，返回空组合
+        if (remainingLow <= 0) {
+            return new LinkedHashMap<>();
+        }
+
+        // 将剩余价值转换回灵石组合
+        return convertFromLow(remainingLow);
+    }
+
+    /**
+     * 计算接取任务所需的手续费灵石组合
+     *
+     * @param rewardMap 奖励灵石组合 {灵石key → 数量}
+     * @param feeRate   手续费率（例如 0.08 表示 8%）
+     * @return 手续费灵石组合
+     */
+    public static Map<String, Integer> calculateFeeStoneMap(Map<String, Integer> rewardMap, double feeRate) {
+        int totalValue = calculateTotalValue(rewardMap);
+        int feeValue = calculateFee(totalValue, feeRate);
+        return convertFromLow(feeValue);
+    }
+
+    /**
+     * 扣除手续费后的奖励灵石组合
+     *
+     * @param rewardMap 奖励灵石组合 {灵石key → 数量}
+     * @param feeRate   手续费率（例如 0.08 表示 8%）
+     * @return 扣除手续费后的奖励灵石组合
+     */
+    public static Map<String, Integer> deductFee(Map<String, Integer> rewardMap, double feeRate) {
+        int totalValue = calculateTotalValue(rewardMap);
+        int feeValue = calculateFee(totalValue, feeRate);
+        return deductFromStoneMap(rewardMap, feeValue);
+    }
 }
