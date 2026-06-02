@@ -18,6 +18,7 @@ public class QuestManager {
     private final HorizonKKQuestPlus plugin;
     private final ConfigManager configManager;
     private final PlayerDataManager playerDataManager;
+    private final Random random = new Random();
 
     // 公共悬赏池 (全服可见)
     private final List<QuestInstance> publicQuestPool = new ArrayList<>();
@@ -97,10 +98,126 @@ public class QuestManager {
             newPublic.add(instance);
         }
 
+        // 发布随机收集任务
+        if (configManager.isRandomCollectEnabled()) {
+            List<QuestInstance> randomQuests = publishRandomCollectQuests();
+            newPublic.addAll(randomQuests);
+        }
+
         // 清理过期公共悬赏
         cleanExpiredPublicQuests();
 
         return newPublic;
+    }
+
+    /**
+     * 发布随机收集任务
+     *
+     * @return 新发布的随机收集任务列表
+     */
+    public List<QuestInstance> publishRandomCollectQuests() {
+        List<QuestInstance> newQuests = new ArrayList<>();
+        Map<String, CollectItemConfig> collectItems = configManager.getCollectItems();
+
+        if (collectItems.isEmpty()) {
+            return newQuests;
+        }
+
+        int count = configManager.getRandomCollectCount();
+        List<String> itemIds = new ArrayList<>(collectItems.keySet());
+
+        for (int i = 0; i < count; i++) {
+            // 随机选择一个物品
+            String itemId = itemIds.get(random.nextInt(itemIds.size()));
+            CollectItemConfig collectItem = collectItems.get(itemId);
+
+            // 生成随机收集数量 (使用物品自己的 maxAmount 限制)
+            int minAmount = configManager.getRandomCollectMinAmount();
+            int maxAmount = collectItem.getMaxAmount();
+            int targetAmount = minAmount + random.nextInt(maxAmount - minAmount + 1);
+
+            // 生成随机收集任务
+            QuestInstance instance = generateRandomCollectQuest(collectItem, targetAmount);
+            if (instance != null) {
+                newQuests.add(instance);
+            }
+        }
+
+        return newQuests;
+    }
+
+    /**
+     * 生成单个随机收集任务
+     *
+     * @param collectItem  收集物品配置
+     * @param targetAmount 目标数量
+     * @return 生成的任务实例
+     */
+    private QuestInstance generateRandomCollectQuest(CollectItemConfig collectItem, int targetAmount) {
+        // 根据价值计算任务等级
+        QuestLevel level = collectItem.calculateLevel();
+
+        // 计算奖励
+        int rewardAmount = collectItem.calculateReward(targetAmount);
+
+        // 生成任务ID
+        String questId = "RCL-" + UUID.randomUUID().toString().substring(0, 6);
+
+        // 构建奖励信息
+        List<String> rewardStrings = new ArrayList<>();
+        // 根据等级选择灵石类型
+        String stoneKey = getStoneKeyByLevel(level);
+        rewardStrings.add(stoneKey + ":" + rewardAmount);
+
+        List<RewardInfo> rewards = RewardInfo.parseList(rewardStrings);
+
+        // 生成任务描述
+        String description = collectItem.buildDescription(targetAmount);
+
+        // 创建任务配置
+        QuestConfig questConfig = new QuestConfig(
+                questId,
+                QuestType.COLLECT,
+                level,
+                collectItem.getItemId(),
+                targetAmount,
+                rewards,
+                7, // 7天时间限制
+                description,
+                true, // 可重复
+                null
+        );
+
+        // 创建任务实例
+        QuestInstance instance = new QuestInstance(questId, questId, "系统悬赏",
+                null, true, true);
+        instance.setExpireInDays(7);
+
+        // 存储任务配置和实例
+        allQuests.put(questId, instance);
+        publicQuestPool.add(instance);
+
+        return instance;
+    }
+
+    /**
+     * 根据任务等级获取灵石类型key
+     *
+     * @param level 任务等级
+     * @return 灵石类型key
+     */
+    private String getStoneKeyByLevel(QuestLevel level) {
+        switch (level) {
+            case SKY:
+                return "jpls";
+            case EARTH:
+                return "spls";
+            case MYSTERY:
+                return "zpls";
+            case HUMAN:
+            default:
+                return "xpls";
+        }
     }
 
     private void cleanExpiredPublicQuests() {

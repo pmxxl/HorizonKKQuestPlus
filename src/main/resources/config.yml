@@ -69,3 +69,153 @@ menu:
 public_quests:
   interval: 3600           # 发布间隔(秒), 默认1小时
   count: 3                 # 每次发布数量
+
+# ==================== 收集任务随机配置 ====================
+random_collect:
+  enabled: true            # 是否启用随机收集任务
+  min_amount: 5            # 最小收集数量
+  max_amount: 50           # 默认最大收集数量 (物品未指定 max_amount 时使用)
+  count: 2                 # 每次定时发布时，随机收集任务的数量
+
+# ==================== 价值定义 ====================
+# 定义价值常量，供 collect_items 引用
+# 使用 @名称 来引用，如: value: "@1jie"
+values:
+  1jie: 4
+  2jie: 8
+  3jie: 16
+  4jie: 32
+  5jie: 64
+  6jie: 128
+  7jie: 256
+  8jie: 512
+  9jie: 1024
+
+# ==================== 可收集物品及价值 ====================
+# 物品ID → 配置
+# 价值决定任务等级:
+#   value < 50   → 人级
+#   50 ≤ v < 200 → 玄级
+#   200 ≤ v < 500 → 地级
+#   v ≥ 500      → 天级
+#
+# 配置格式:
+#   完整格式:
+#     物品ID:
+#       display: "显示名称"
+#       value: 数值 或 "@价值别名"
+#       max_amount: 最大数量 (可选，默认使用 random_collect.max_amount)
+#
+#   简写格式 (直接引用价值别名):
+#     物品ID: "@价值别名"
+collect_items:
+  # ========== 一阶材料 (价值 4) ==========
+  剑痕石:
+    display: "剑痕石"
+    value: "@1jie"
+    max_amount: 20
+  赤铜:
+    display: "赤铜"
+    value: "@1jie"
+    max_amount: 25
+  精铁:
+    display: "精铁"
+    value: "@1jie"
+    max_amount: 20
+  玄阳石:
+    display: "玄阳石"
+    value: "@1jie"
+    max_amount: 15
+  青玉:
+    display: "青玉"
+    value: "@1jie"
+    max_amount: 20
+  黎金沙:
+    display: "黎金沙"
+    value: "@1jie"
+    max_amount: 15
+  水云铁:
+    display: "水云铁"
+    value: "@1jie"
+    max_amount: 20
+  火元石:
+    display: "火元石"
+    value: "@1jie"
+    max_amount: 15
+  白藏土:
+    display: "白藏土"
+    value: "@1jie"
+    max_amount: 25
+  寒冰石:
+    display: "寒冰石"
+    value: "@1jie"
+    max_amount: 15
+  风灵石:
+    display: "风灵石"
+    value: "@1jie"
+    max_amount: 15
+  雷灵石:
+    display: "雷灵石"
+    value: "@1jie"
+    max_amount: 15
+  一阶朱砂:
+    display: "一阶朱砂"
+    value: "@1jie"
+    max_amount: 20
+
+  # ========== 二阶材料 (价值 8) ==========
+  玄铁:
+    display: "玄铁"
+    value: "@2jie"
+    max_amount: 15
+  秘银:
+    display: "秘银"
+    value: "@2jie"
+    max_amount: 12
+
+  # ========== 三阶材料 (价值 16) ==========
+  星辰石:
+    display: "星辰石"
+    value: "@3jie"
+    max_amount: 10
+  龙血玉:
+    display: "龙血玉"
+    value: "@3jie"
+    max_amount: 8
+
+  # ========== 四阶材料 (价值 32) ==========
+  天外陨铁:
+    display: "天外陨铁"
+    value: "@4jie"
+    max_amount: 6
+
+  # ========== 五阶材料 (价值 64) ==========
+  混沌晶石:
+    display: "混沌晶石"
+    value: "@5jie"
+    max_amount: 5
+
+  # ========== 高阶材料 ==========
+  # 六阶 (价值 128)
+  太古神石:
+    display: "太古神石"
+    value: "@6jie"
+    max_amount: 4
+
+  # 七阶 (价值 256)
+  造化玉碟:
+    display: "造化玉碟"
+    value: "@7jie"
+    max_amount: 3
+
+  # 八阶 (价值 512) - 地级
+  鸿蒙紫气:
+    display: "鸿蒙紫气"
+    value: "@8jie"
+    max_amount: 2
+
+  # 九阶 (价值 1024) - 天级
+  混沌本源:
+    display: "混沌本源"
+    value: "@9jie"
+    max_amount: 1

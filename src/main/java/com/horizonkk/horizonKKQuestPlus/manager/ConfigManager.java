@@ -29,6 +29,18 @@ public class ConfigManager {
     // 灵石类型 → 显示名映射
     private final Map<String, String> stoneTypes = new LinkedHashMap<>();
 
+    // 收集物品配置
+    private final Map<String, CollectItemConfig> collectItems = new LinkedHashMap<>();
+
+    // 价值定义
+    private final Map<String, Integer> valueDefinitions = new LinkedHashMap<>();
+
+    // 随机收集任务配置
+    private boolean randomCollectEnabled = false;
+    private int randomCollectMinAmount = 5;
+    private int randomCollectMaxAmount = 50;
+    private int randomCollectCount = 2;
+
     public ConfigManager(HorizonKKQuestPlus plugin) {
         this.plugin = plugin;
     }
@@ -49,6 +61,10 @@ public class ConfigManager {
 
         plugin.getLogger().info("共加载 " + questTemplates.size() + " 个悬赏任务模板, "
                 + itemConfigs.size() + " 个悬赏令等级");
+
+        if (randomCollectEnabled) {
+            plugin.getLogger().info("随机收集任务已启用, 共加载 " + collectItems.size() + " 个可收集物品");
+        }
     }
 
     // ==================== 主配置 ====================
@@ -117,6 +133,105 @@ public class ConfigManager {
         if (publicSec != null) {
             publicQuestInterval = publicSec.getInt("interval", 3600);
             publicQuestCount = publicSec.getInt("count", 3);
+        }
+
+        // 随机收集任务配置
+        ConfigurationSection randomCollectSec = yaml.getConfigurationSection("random_collect");
+        if (randomCollectSec != null) {
+            randomCollectEnabled = randomCollectSec.getBoolean("enabled", false);
+            randomCollectMinAmount = randomCollectSec.getInt("min_amount", 5);
+            randomCollectMaxAmount = randomCollectSec.getInt("max_amount", 50);
+            randomCollectCount = randomCollectSec.getInt("count", 2);
+        }
+
+        // 加载价值定义
+        ConfigurationSection valuesSec = yaml.getConfigurationSection("values");
+        if (valuesSec != null) {
+            for (String key : valuesSec.getKeys(false)) {
+                int value = valuesSec.getInt(key, 0);
+                valueDefinitions.put(key, value);
+            }
+        }
+
+        // 加载收集物品配置
+        ConfigurationSection collectSec = yaml.getConfigurationSection("collect_items");
+        if (collectSec != null) {
+            for (String key : collectSec.getKeys(false)) {
+                // 跳过非物品配置（如 1jie: "4" 这种价值定义）
+                if (valueDefinitions.containsKey(key)) {
+                    continue;
+                }
+
+                try {
+                    CollectItemConfig config = parseCollectItemConfig(key, collectSec);
+                    if (config != null) {
+                        collectItems.put(key, config);
+                    }
+                } catch (Exception e) {
+                    plugin.getLogger().warning("解析收集物品配置失败: " + key + " - " + e.getMessage());
+                }
+            }
+        }
+    }
+
+    /**
+     * 解析收集物品配置
+     * 支持两种格式:
+     * 1. 完整格式: { display: "xxx", value: 10 或 "@1jie", max_amount: 20 }
+     * 2. 简写格式: "@1jie"
+     */
+    private CollectItemConfig parseCollectItemConfig(String itemId, ConfigurationSection parentSec) {
+        Object rawValue = parentSec.get(itemId);
+
+        // 简写格式: "物品ID": "@1jie"
+        if (rawValue instanceof String) {
+            String valueStr = (String) rawValue;
+            int value = resolveValue(valueStr);
+            return new CollectItemConfig(itemId, itemId, value, randomCollectMaxAmount);
+        }
+
+        // 完整格式
+        ConfigurationSection itemSec = parentSec.getConfigurationSection(itemId);
+        if (itemSec == null) {
+            return null;
+        }
+
+        String display = itemSec.getString("display", itemId);
+        String valueStr = itemSec.getString("value", "0");
+        int value = resolveValue(valueStr);
+        int maxAmount = itemSec.getInt("max_amount", randomCollectMaxAmount);
+
+        return new CollectItemConfig(itemId, display, value, maxAmount);
+    }
+
+    /**
+     * 解析值 (支持引用格式 "@xxx")
+     *
+     * @param valueStr 值字符串，可以是数字或 "@别名"
+     * @return 解析后的数值
+     */
+    private int resolveValue(String valueStr) {
+        if (valueStr == null || valueStr.isEmpty()) {
+            return 0;
+        }
+
+        // 引用格式: "@1jie"
+        if (valueStr.startsWith("@")) {
+            String refKey = valueStr.substring(1);
+            Integer refValue = valueDefinitions.get(refKey);
+            if (refValue != null) {
+                return refValue;
+            }
+            plugin.getLogger().warning("未找到价值定义: " + refKey);
+            return 0;
+        }
+
+        // 直接数值
+        try {
+            return Integer.parseInt(valueStr);
+        } catch (NumberFormatException e) {
+            plugin.getLogger().warning("无效的价值格式: " + valueStr);
+            return 0;
         }
     }
 
@@ -247,5 +362,39 @@ public class ConfigManager {
 
     public int getPublicQuestCount() {
         return publicQuestCount;
+    }
+
+    // ==================== 收集物品配置 ====================
+
+    public Map<String, CollectItemConfig> getCollectItems() {
+        return collectItems;
+    }
+
+    public CollectItemConfig getCollectItem(String itemId) {
+        return collectItems.get(itemId);
+    }
+
+    public boolean isRandomCollectEnabled() {
+        return randomCollectEnabled;
+    }
+
+    public int getRandomCollectMinAmount() {
+        return randomCollectMinAmount;
+    }
+
+    public int getRandomCollectMaxAmount() {
+        return randomCollectMaxAmount;
+    }
+
+    public int getRandomCollectCount() {
+        return randomCollectCount;
+    }
+
+    public Map<String, Integer> getValueDefinitions() {
+        return valueDefinitions;
+    }
+
+    public int getValueDefinition(String key) {
+        return valueDefinitions.getOrDefault(key, 0);
     }
 }
