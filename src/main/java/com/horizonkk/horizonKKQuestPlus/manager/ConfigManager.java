@@ -47,6 +47,11 @@ public class ConfigManager {
     // 任务模板库 {等级 → 模板列表}
     private final Map<QuestLevel, List<QuestTemplate>> questTemplatesByLevel = new LinkedHashMap<>();
 
+    // 奖励浮动倍率
+    private boolean rewardMultiplierEnabled = true;
+    private double rewardMultiplierMin = 0.7;
+    private double rewardMultiplierMax = 1.3;
+
     public ConfigManager(HorizonKKQuestPlus plugin) {
         this.plugin = plugin;
     }
@@ -108,6 +113,17 @@ public class ConfigManager {
         plugin.getLogger().info("灵石转换阈值 - 中品: " + StoneConverter.getMidThreshold()
                 + ", 上品: " + StoneConverter.getHighThreshold()
                 + ", 极品: " + StoneConverter.getTopThreshold());
+
+        // 加载奖励浮动倍率
+        ConfigurationSection multiplierSec = yaml.getConfigurationSection("reward_multiplier");
+        if (multiplierSec != null) {
+            rewardMultiplierEnabled = multiplierSec.getBoolean("enabled", true);
+            rewardMultiplierMin = multiplierSec.getDouble("min", 0.7);
+            rewardMultiplierMax = multiplierSec.getDouble("max", 1.3);
+        }
+        if (rewardMultiplierEnabled) {
+            plugin.getLogger().info("奖励浮动倍率已启用 - 范围: " + rewardMultiplierMin + " ~ " + rewardMultiplierMax);
+        }
 
         // 加载悬赏令物品外观
         ConfigurationSection itemSec = yaml.getConfigurationSection("item");
@@ -565,5 +581,30 @@ public class ConfigManager {
         }
 
         return QuestLevel.HUMAN;
+    }
+
+    // ==================== 奖励浮动倍率 ====================
+
+    public boolean isRewardMultiplierEnabled() {
+        return rewardMultiplierEnabled;
+    }
+
+    public double getRewardMultiplierMin() {
+        return rewardMultiplierMin;
+    }
+
+    public double getRewardMultiplierMax() {
+        return rewardMultiplierMax;
+    }
+
+    /**
+     * 获取随机浮动倍率
+     * @return 在 [min, max] 范围内的随机倍率
+     */
+    public double getRandomRewardMultiplier() {
+        if (!rewardMultiplierEnabled) {
+            return 1.0;
+        }
+        return rewardMultiplierMin + (rewardMultiplierMax - rewardMultiplierMin) * Math.random();
     }
 }

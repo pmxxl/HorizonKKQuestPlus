@@ -60,11 +60,14 @@ public class QuestGenerator {
                 return null;
             }
 
+            // 第五步：应用奖励浮动倍率
+            int rewardValue = applyRewardMultiplier(totalValue);
+
             return new QuestRequirement(
                     template.getTemplateId(),
                     template.getLevel(),
                     itemAmounts,
-                    totalValue
+                    rewardValue
             );
 
         } catch (Exception e) {
@@ -198,6 +201,24 @@ public class QuestGenerator {
         }
 
         return currentValue;
+    }
+
+    /**
+     * 应用奖励浮动倍率
+     *
+     * @param baseValue 基础价值
+     * @return 应用浮动倍率后的价值
+     */
+    private int applyRewardMultiplier(int baseValue) {
+        if (!configManager.isRewardMultiplierEnabled()) {
+            return baseValue;
+        }
+
+        double multiplier = configManager.getRandomRewardMultiplier();
+        int rewardValue = (int) Math.round(baseValue * multiplier);
+
+        // 确保奖励价值至少为1
+        return Math.max(1, rewardValue);
     }
 
     /**
