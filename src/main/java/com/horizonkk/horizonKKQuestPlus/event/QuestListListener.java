@@ -5,6 +5,7 @@ import com.horizonkk.horizonKKQuestPlus.gui.*;
 import com.horizonkk.horizonKKQuestPlus.manager.ConfigManager;
 import com.horizonkk.horizonKKQuestPlus.manager.QuestManager;
 import com.horizonkk.horizonKKQuestPlus.model.QuestInstance;
+import com.horizonkk.horizonKKQuestPlus.model.QuestStatus;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -13,14 +14,9 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 
 /**
- * 悬赏列表事件监听 (公共/已接取/我发布的)
+ * 悬赏列表事件监听
  */
 public class QuestListListener implements Listener {
-
-    private static final int PREV_SLOT = 48;
-    private static final int BACK_SLOT = 49;
-    private static final int NEXT_SLOT = 50;
-    private static final int PAGE_SIZE = 45;
 
     private final HorizonKKQuestPlus plugin;
     private final QuestManager questManager;
@@ -39,15 +35,14 @@ public class QuestListListener implements Listener {
 
         event.setCancelled(true);
 
-        if (event.getRawSlot() >= event.getInventory().getSize()) return;
+        if (event.getRawSlot() < 0 || event.getRawSlot() >= event.getInventory().getSize()) return;
 
         Player player = (Player) event.getWhoClicked();
         int slot = event.getRawSlot();
         int page = holder.getCurrentPage();
         QuestListGUI gui = holder.getGui();
 
-        if (slot == BACK_SLOT) {
-            // 返回主菜单
+        if (slot == QuestListGUI.BACK_SLOT) {
             player.closeInventory();
             Bukkit.getScheduler().runTask(plugin, () -> {
                 new QuestMenuGUI(plugin, questManager, configManager, player).open();
@@ -55,44 +50,43 @@ public class QuestListListener implements Listener {
             return;
         }
 
-        if (slot == PREV_SLOT && page > 1) {
+        if (slot == QuestListGUI.PREV_SLOT && page > 1) {
             gui.goToPage(page - 1);
             return;
         }
 
-        if (slot == NEXT_SLOT) {
+        if (slot == QuestListGUI.NEXT_SLOT) {
             int totalPages = Math.max(1,
-                    (int) Math.ceil((double) holder.getQuests().size() / PAGE_SIZE));
+                    (int) Math.ceil((double) holder.getQuests().size() / QuestListGUI.PAGE_SIZE));
             if (page < totalPages) {
                 gui.goToPage(page + 1);
             }
             return;
         }
 
-        // 点击悬赏槽位
-        int startIdx = (page - 1) * PAGE_SIZE;
-        int questIndex = startIdx + slot;
-        if (questIndex >= holder.getQuests().size()) return;
+        // 悬赏槽位点击 — 用槽位反算索引
+        int index = QuestListGUI.slotToIndex(slot);
+        if (index < 0) return;
 
-        QuestInstance instance = holder.getQuests().get(questIndex);
+        int questIdx = (page - 1) * QuestListGUI.PAGE_SIZE + index;
+        if (questIdx >= holder.getQuests().size()) return;
+
+        QuestInstance instance = holder.getQuests().get(questIdx);
 
         switch (holder.getListType()) {
             case PUBLIC:
-                // 接取公共悬赏
-                if (instance.getStatus() == com.horizonkk.horizonKKQuestPlus.model.QuestStatus.PUBLISHED) {
+                if (instance.getStatus() == QuestStatus.PUBLISHED) {
                     questManager.acceptPublicQuest(player, instance.getQuestId());
                     gui.refresh();
                 }
                 break;
             case ACCEPTED:
-                // 查看已接取悬赏详情 (暂无详情页, 提示进度)
                 player.sendMessage(colorize("&7悬赏 &f" + instance.getQuestId()
                         + " &7进度: &f" + instance.getProgress() + "&7/&f"
                         + configManager.getQuestTemplate(instance.getTemplateId()).getTargetAmount()));
                 break;
             case MY_PUBLISHED:
-                // 取消已发布的悬赏
-                if (instance.getStatus() == com.horizonkk.horizonKKQuestPlus.model.QuestStatus.PUBLISHED) {
+                if (instance.getStatus() == QuestStatus.PUBLISHED) {
                     questManager.cancelQuest(player, instance.getQuestId());
                     gui.refresh();
                 }

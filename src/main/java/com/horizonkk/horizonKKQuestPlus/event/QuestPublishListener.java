@@ -37,7 +37,7 @@ public class QuestPublishListener implements Listener {
 
         event.setCancelled(true);
 
-        if (event.getRawSlot() >= event.getInventory().getSize()) return;
+        if (event.getRawSlot() < 0 || event.getRawSlot() >= event.getInventory().getSize()) return;
 
         Player player = (Player) event.getWhoClicked();
         int slot = event.getRawSlot();

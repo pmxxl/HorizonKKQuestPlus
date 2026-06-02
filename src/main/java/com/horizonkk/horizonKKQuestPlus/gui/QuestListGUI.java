@@ -11,14 +11,24 @@ import org.bukkit.inventory.Inventory;
 import java.util.List;
 
 /**
- * 悬赏列表 GUI (公共/已接取/我发布的) — 支持分页, 每页45个槽位
+ * 悬赏列表 GUI — 从槽位11开始, 每排7个, 共4排(28个/页)
+ * 布局:
+ *   [  ][10][11][12][13][14][15][16][  ]   ← 第2行 slots 9-17
+ *   [  ][19][20][21][22][23][24][25][  ]   ← 第3行 slots 18-26
+ *   [  ][28][29][30][31][32][33][34][  ]   ← 第4行 slots 27-35
+ *   [  ][37][38][39][40][41][42][43][  ]   ← 第5行 slots 36-44
+ *   [< ][  ][  ][  ][返][  ][  ][  ][ >]   ← 第6行 slots 45-53
  */
 public class QuestListGUI {
 
-    private static final int PAGE_SIZE = 45;  // 6行 * 9 - 9(底栏)
-    private static final int PREV_SLOT = 48;
-    private static final int BACK_SLOT = 49;
-    private static final int NEXT_SLOT = 50;
+    private static final int ROWS = 4;
+    private static final int COLS = 7;
+    public static final int PAGE_SIZE = ROWS * COLS;  // 28
+    private static final int START_SLOT = 10;
+
+    public static final int PREV_SLOT = 45;
+    public static final int BACK_SLOT = 49;
+    public static final int NEXT_SLOT = 53;
 
     private final HorizonKKQuestPlus plugin;
     private final QuestManager questManager;
@@ -60,7 +70,6 @@ public class QuestListGUI {
     }
 
     public void refresh() {
-        // 重新加载悬赏数据
         List<QuestInstance> quests;
         switch (holder.getListType()) {
             case PUBLIC:
@@ -78,6 +87,27 @@ public class QuestListGUI {
         holder.getQuests().clear();
         holder.getQuests().addAll(quests);
         goToPage(holder.getCurrentPage());
+    }
+
+    /**
+     * 将页内索引转为GUI槽位
+     */
+    public static int indexToSlot(int index) {
+        int row = index / COLS;
+        int col = index % COLS;
+        return START_SLOT + row * 9 + col;
+    }
+
+    /**
+     * 将GUI槽位转为页内索引, 不是悬赏槽位返回-1
+     */
+    public static int slotToIndex(int slot) {
+        if (slot < START_SLOT) return -1;
+        int offset = slot - START_SLOT;
+        int row = offset / 9;
+        int col = offset % 9;
+        if (row >= ROWS || col >= COLS) return -1;
+        return row * COLS + col;
     }
 
     private Inventory buildInventory(int page) {
@@ -101,10 +131,11 @@ public class QuestListGUI {
         int startIdx = (page - 1) * PAGE_SIZE;
         for (int i = 0; i < PAGE_SIZE && (startIdx + i) < quests.size(); i++) {
             QuestInstance instance = quests.get(startIdx + i);
-            inv.setItem(i, IconBuilder.buildQuestIcon(instance, configManager, player));
+            int slot = indexToSlot(i);
+            inv.setItem(slot, IconBuilder.buildQuestIcon(instance, configManager, player));
         }
 
-        // 底栏按钮
+        // 底栏 — 第6行左右翻页
         if (page > 1) {
             inv.setItem(PREV_SLOT, IconBuilder.buildPrevPageButton(page));
         }
