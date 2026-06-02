@@ -155,7 +155,7 @@ public class ConfigManager {
             ConfigurationSection weightsSec = randomCollectSec.getConfigurationSection("level_weights");
             if (weightsSec != null) {
                 for (QuestLevel level : QuestLevel.values()) {
-                    int weight = weightsSec.getInt(level.name().toLowerCase(), 0);
+                    int weight = weightsSec.getInt(level.getConfigKey(), 0);
                     levelWeights.put(level, weight);
                 }
             }
@@ -449,6 +449,13 @@ public class ConfigManager {
 
     public QuestConfig getQuestTemplate(String id) {
         return questTemplates.get(id);
+    }
+
+    /**
+     * 添加任务模板（用于动态生成的随机收集任务）
+     */
+    public void addQuestTemplate(String id, QuestConfig template) {
+        questTemplates.put(id, template);
     }
 
     public Set<String> getQuestTemplateIds() {

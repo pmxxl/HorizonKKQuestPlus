@@ -208,6 +208,9 @@ public class QuestManager {
                 null
         );
 
+        // 将任务配置存储到 configManager 中，以便后续查找
+        configManager.addQuestTemplate(questId, questConfig);
+
         // 创建任务实例
         QuestInstance instance = new QuestInstance(questId, questId, "系统悬赏",
                 null, true, true);
