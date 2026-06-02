@@ -25,7 +25,7 @@ item:
       - '&f{reward}'
   # 玄级悬赏
   xlp:
-    custommodel: 10169
+    custommodel: 10170
     name: '&f悬赏令 &3[&b玄级&3]'
     lore:
       - '&f发布人: {player}'
@@ -36,7 +36,7 @@ item:
       - '&f{reward}'
   # 地级悬赏
   dlp:
-    custommodel: 10170
+    custommodel: 10167
     name: '&f悬赏令 &5[&d地级&5]'
     lore:
       - '&f发布人: {player}'
@@ -47,7 +47,7 @@ item:
       - '&f{reward}'
   # 天级悬赏
   tlp:
-    custommodel: 10171
+    custommodel: 10169
     name: '&f悬赏令 &6[&e天级&6]'
     lore:
       - '&f发布人: {player}'

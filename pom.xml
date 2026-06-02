@@ -71,5 +71,12 @@
             <scope>system</scope>
             <systemPath>${project.basedir}/libs/NeigeItems-1.21.129-api.jar</systemPath>
         </dependency>
+        <dependency>
+            <groupId>me.horizonkk.TYLcalendarPlus</groupId>
+            <artifactId>TYLcalendarPlus</artifactId>
+            <version>1.0-SNAPSHOT</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/libs/TYLcalendarPlus-1.0-SNAPSHOT.jar</systemPath>
+        </dependency>
     </dependencies>
 </project>

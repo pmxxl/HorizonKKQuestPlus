@@ -51,11 +51,6 @@ public class QuestPublishGUI {
         Inventory inv = Bukkit.createInventory(holder, 54,
                 colorize("&6&l发布悬赏 — 选择任务模板"));
 
-        // 填充
-        for (int i = 0; i < 54; i++) {
-            inv.setItem(i, IconBuilder.buildFiller());
-        }
-
         // 填充模板
         int size = Math.min(templates.size(), MAX_SLOTS);
         for (int i = 0; i < size; i++) {

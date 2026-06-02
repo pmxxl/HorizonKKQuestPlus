@@ -129,6 +129,7 @@ public class QuestCommand implements CommandExecutor, TabCompleter {
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         List<String> completions = new ArrayList<>();
+
         if (args.length == 1) {
             String partial = args[0].toLowerCase();
             if ("reload".startsWith(partial)) completions.add("reload");
@@ -138,41 +139,42 @@ public class QuestCommand implements CommandExecutor, TabCompleter {
         } else if (args.length == 2) {
             switch (args[0].toLowerCase()) {
                 case "open":
-                    String partial = args[1].toLowerCase();
                     for (Player p : Bukkit.getOnlinePlayers()) {
-                        if (p.getName().toLowerCase().contains(partial)) {
+                        if (p.getName().toLowerCase().contains(args[1].toLowerCase())) {
                             completions.add(p.getName());
                         }
                     }
                     break;
                 case "publish":
-                    String partial2 = args[1].toLowerCase();
                     for (String id : configManager.getQuestTemplateIds()) {
-                        if (id.toLowerCase().contains(partial2)) {
+                        if (id.toLowerCase().contains(args[1].toLowerCase())) {
                             completions.add(id);
                         }
                     }
                     break;
-            }
-        } else if (args.length == 3 && args[0].equalsIgnoreCase("publish")) {
-            String partial = args[2].toLowerCase();
-            for (String t : new String[]{"anonymous", "named"}) {
-                if (t.startsWith(partial)) completions.add(t);
-            }
                 case "list":
                     for (String t : new String[]{"public", "accepted", "published"}) {
                         if (t.startsWith(args[1].toLowerCase())) completions.add(t);
                     }
                     break;
             }
-        } else if (args.length == 3 && args[0].equalsIgnoreCase("open")) {
-            String partial = args[2].toLowerCase();
-            for (Player p : Bukkit.getOnlinePlayers()) {
-                if (p.getName().toLowerCase().contains(partial)) {
-                    completions.add(p.getName());
-                }
+        } else if (args.length == 3) {
+            switch (args[0].toLowerCase()) {
+                case "open":
+                    for (Player p : Bukkit.getOnlinePlayers()) {
+                        if (p.getName().toLowerCase().contains(args[2].toLowerCase())) {
+                            completions.add(p.getName());
+                        }
+                    }
+                    break;
+                case "publish":
+                    for (String t : new String[]{"anonymous", "named"}) {
+                        if (t.startsWith(args[2].toLowerCase())) completions.add(t);
+                    }
+                    break;
             }
         }
+
         return completions;
     }
 

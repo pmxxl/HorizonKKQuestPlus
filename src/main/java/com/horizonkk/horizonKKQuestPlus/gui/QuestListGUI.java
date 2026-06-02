@@ -97,11 +97,6 @@ public class QuestListGUI {
 
         Inventory inv = Bukkit.createInventory(holder, 54, colorize(title));
 
-        // 填充
-        for (int i = 0; i < 54; i++) {
-            inv.setItem(i, IconBuilder.buildFiller());
-        }
-
         // 填充悬赏图标
         int startIdx = (page - 1) * PAGE_SIZE;
         for (int i = 0; i < PAGE_SIZE && (startIdx + i) < quests.size(); i++) {
