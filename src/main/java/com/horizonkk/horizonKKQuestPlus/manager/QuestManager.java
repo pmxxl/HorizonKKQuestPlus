@@ -58,6 +58,7 @@ public class QuestManager {
 
         allQuests.put(questId, instance);
         playerDataManager.addPublishedQuest(player.getUniqueId(), instance);
+        publicQuestPool.add(instance);
 
         // 给予悬赏令物品
         ItemStack questItem = buildQuestItem(instance, template, player.getName());
@@ -170,9 +171,7 @@ public class QuestManager {
         playerDataManager.addAcceptedQuest(player.getUniqueId(), instance);
 
         // 从公共悬赏池移除
-        if (instance.isPublic()) {
-            publicQuestPool.remove(instance);
-        }
+        publicQuestPool.remove(instance);
 
         // 给接取人一份悬赏令物品
         ItemStack questItem = buildQuestItem(instance, template, instance.getPublisherName());

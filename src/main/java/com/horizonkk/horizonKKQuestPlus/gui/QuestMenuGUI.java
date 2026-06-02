@@ -56,11 +56,6 @@ public class QuestMenuGUI {
         Inventory inv = Bukkit.createInventory(holder, menuConfig.getSize(),
                 colorize("&6&l悬赏系统"));
 
-        // 填充背景
-        for (int i = 0; i < menuConfig.getSize(); i++) {
-            inv.setItem(i, IconBuilder.buildFiller());
-        }
-
         // 公共悬赏按钮 — 槽位 11
         int publicCount = questManager.getPublicQuests().size();
         List<String> publicLore = Arrays.asList(

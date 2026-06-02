@@ -22,7 +22,7 @@ item:
       - '{text}'
       - ''
       - '&7 &7[  &a任务奖励  &7]     '
-      - '{reward}'
+      - '&f{reward}'
   # 玄级悬赏
   xlp:
     custommodel: 10169
@@ -33,7 +33,7 @@ item:
       - '{text}'
       - ''
       - '&7 &7[  &a任务奖励  &7]     '
-      - '{reward}'
+      - '&f{reward}'
   # 地级悬赏
   dlp:
     custommodel: 10170
@@ -44,7 +44,7 @@ item:
       - '{text}'
       - ''
       - '&7 &7[  &a任务奖励  &7]     '
-      - '{reward}'
+      - '&f{reward}'
   # 天级悬赏
   tlp:
     custommodel: 10171
@@ -55,7 +55,7 @@ item:
       - '{text}'
       - ''
       - '&7 &7[  &a任务奖励  &7]     '
-      - '{reward}'
+      - '&f{reward}'
 
 # ==================== 主菜单配置 ====================
 menu:
