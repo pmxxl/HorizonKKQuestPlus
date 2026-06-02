@@ -71,10 +71,12 @@ public class QuestConfig {
             if (r.hasStone()) {
                 String stoneName = stoneTypes != null ? stoneTypes.get(r.getStoneKey()) : null;
                 String name = stoneName != null ? stoneName : r.getStoneKey();
-                parts.add("&f" + name + " &a×" + r.getStoneAmount());
+                String line = "&f" + name + " &a×" + r.getStoneAmount();
+                parts.add(line);
             }
             if (r.hasItem()) {
-                parts.add("&f" + r.getItemId() + " &a×" + r.getItemAmount());
+                String line = "&f" + r.getItemId() + " &a×" + r.getItemAmount();
+                parts.add(line);
             }
             if (r.hasCommands()) {
                 parts.add("&f特殊奖励 &a×1");

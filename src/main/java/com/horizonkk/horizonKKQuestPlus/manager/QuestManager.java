@@ -487,26 +487,40 @@ public class QuestManager {
         // 获取奖励列表（每行一个奖励）
         List<String> rewardList = template.buildRewardTextList(configManager.getStoneTypes());
 
-        // 先用占位符替换，之后手动插入奖励行
-        List<String> baseLore = itemConfig.buildLore(displayName, template.getDescription(), "{reward}");
+        // 调试日志
+        plugin.getLogger().info("[DEBUG] 原始lore模板: " + itemConfig.getLore());
+        plugin.getLogger().info("[DEBUG] 奖励配置: " + template.getRewards());
+        plugin.getLogger().info("[DEBUG] 灵石类型: " + configManager.getStoneTypes());
+        plugin.getLogger().info("[DEBUG] 奖励列表: " + rewardList);
 
-        // 构建最终lore：在 {reward} 占位符位置插入奖励列表
+        // 构建最终lore
         List<String> lore = new ArrayList<>();
         boolean rewardInserted = false;
-        for (String line : baseLore) {
+
+        // 遍历原始lore模板（包含&颜色代码）
+        for (String line : itemConfig.getLore()) {
+            // 检查是否包含 {reward} 占位符
             if (line.contains("{reward}") && !rewardInserted) {
-                // 替换占位符，插入所有奖励行
+                plugin.getLogger().info("[DEBUG] 找到 {reward} 占位符，行内容: " + line);
+                // 替换占位符为奖励列表
                 for (String rewardLine : rewardList) {
-                    lore.add(colorize(rewardLine));
+                    String colorized = colorize(rewardLine);
+                    plugin.getLogger().info("[DEBUG] 奖励行: " + rewardLine + " -> " + colorized);
+                    lore.add(colorized);
                 }
                 rewardInserted = true;
             } else if (!line.contains("{reward}")) {
-                lore.add(line);
+                // 替换其他占位符并colorize
+                String processed = line
+                        .replace("{player}", displayName)
+                        .replace("{text}", template.getDescription());
+                lore.add(colorize(processed));
             }
         }
 
         // 如果没有找到占位符，在末尾添加奖励
         if (!rewardInserted && !rewardList.isEmpty()) {
+            plugin.getLogger().info("[DEBUG] 未找到 {reward} 占位符，在末尾添加奖励");
             lore.add(colorize("&7 &7[  &a任务奖励  &7]     "));
             for (String rewardLine : rewardList) {
                 lore.add(colorize(rewardLine));
@@ -521,6 +535,8 @@ public class QuestManager {
         if (template.getTimeLimit() > 0) {
             lore.add(colorize("&7过期时间: &f" + instance.getExpireTimeDisplay()));
         }
+
+        plugin.getLogger().info("[DEBUG] 最终lore: " + lore);
 
         return NeigeitemsHook.buildCustomItem(itemConfig.getCustomModel(), name, lore);
     }

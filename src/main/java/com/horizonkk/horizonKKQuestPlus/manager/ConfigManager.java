@@ -108,9 +108,11 @@ public class ConfigManager {
 
                 int customModel = levelSec.getInt("custommodel", level.getCustomModelData());
                 String name = colorize(levelSec.getString("name", ""));
-                List<String> lore = colorizeList(levelSec.getStringList("lore"));
+                List<String> rawLore = levelSec.getStringList("lore");
 
-                itemConfigs.put(level, new QuestItemConfig(customModel, name, lore));
+                // 不对lore进行colorize处理，保留原始的&颜色代码和占位符
+                // 在buildQuestItem时再统一处理
+                itemConfigs.put(level, new QuestItemConfig(customModel, name, rawLore));
             }
         }
 
@@ -213,14 +215,16 @@ public class ConfigManager {
         }
 
         for (QuestLevel level : QuestLevel.values()) {
-            String levelKey = level.name().toLowerCase();
-            ConfigurationSection levelSec = templatesSec.getConfigurationSection(levelKey);
-            if (levelSec == null) {
+            String levelKey = level.getConfigKey(); // 使用 configKey (rlp/xlp/dlp/tlp)
+
+            // 直接获取该等级对应的列表
+            List<?> templateList = templatesSec.getList(levelKey);
+            if (templateList == null || templateList.isEmpty()) {
                 continue;
             }
 
             List<QuestTemplate> templates = new ArrayList<>();
-            for (Object item : levelSec.getList(levelKey, Collections.emptyList())) {
+            for (Object item : templateList) {
                 if (item instanceof Map) {
                     try {
                         QuestTemplate template = parseQuestTemplate(level, (Map<String, Object>) item);
