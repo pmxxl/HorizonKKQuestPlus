@@ -12,23 +12,22 @@ package com.horizonkk.horizonKKQuestPlus.model;
 public class CollectItemConfig {
 
     private final String itemId;       // NI物品ID
-    private final String displayName;  // 显示名称
     private final int value;           // 基础价值
     private final int maxAmount;       // 最大收集数量
 
-    public CollectItemConfig(String itemId, String displayName, int value, int maxAmount) {
+    /**
+     * @param itemId    NI物品ID
+     * @param value     基础价值
+     * @param maxAmount 最大收集数量
+     */
+    public CollectItemConfig(String itemId, int value, int maxAmount) {
         this.itemId = itemId;
-        this.displayName = displayName;
         this.value = value;
         this.maxAmount = maxAmount;
     }
 
     public String getItemId() {
         return itemId;
-    }
-
-    public String getDisplayName() {
-        return displayName;
     }
 
     public int getValue() {
@@ -68,21 +67,21 @@ public class CollectItemConfig {
     }
 
     /**
-     * 生成任务描述
+     * 生成任务描述 (使用物品ID作为显示名)
      *
      * @param amount 收集数量
      * @return 格式化的任务描述
      */
     public String buildDescription(int amount) {
-        return "&f收集 &a" + amount + " &f个" + displayName;
+        return "&f收集 &a" + amount + " &f个" + itemId;
     }
 
     @Override
     public String toString() {
         return "CollectItemConfig{" +
                 "itemId='" + itemId + '\'' +
-                ", displayName='" + displayName + '\'' +
                 ", value=" + value +
+                ", maxAmount=" + maxAmount +
                 '}';
     }
 }

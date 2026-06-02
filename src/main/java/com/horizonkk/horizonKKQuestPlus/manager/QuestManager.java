@@ -171,8 +171,11 @@ public class QuestManager {
 
         List<RewardInfo> rewards = RewardInfo.parseList(rewardStrings);
 
+        // 获取物品显示名称 (从 NI 物品库获取，如果获取失败则使用物品ID)
+        String itemDisplayName = getItemDisplayName(collectItem.getItemId());
+
         // 生成任务描述
-        String description = collectItem.buildDescription(targetAmount);
+        String description = "&f收集 &a" + targetAmount + " &f个" + itemDisplayName;
 
         // 创建任务配置
         QuestConfig questConfig = new QuestConfig(
@@ -198,6 +201,25 @@ public class QuestManager {
         publicQuestPool.add(instance);
 
         return instance;
+    }
+
+    /**
+     * 获取 NI 物品的显示名称
+     *
+     * @param itemId NI物品ID
+     * @return 物品显示名称，如果获取失败则返回物品ID
+     */
+    private String getItemDisplayName(String itemId) {
+        try {
+            // 尝试从 NI 获取物品，然后获取其显示名称
+            ItemStack itemStack = NeigeitemsHook.getItemStack(itemId, null);
+            if (itemStack != null && itemStack.hasItemMeta() && itemStack.getItemMeta().hasDisplayName()) {
+                return itemStack.getItemMeta().getDisplayName();
+            }
+        } catch (Exception e) {
+            // 获取失败，使用物品ID作为显示名
+        }
+        return itemId;
     }
 
     /**

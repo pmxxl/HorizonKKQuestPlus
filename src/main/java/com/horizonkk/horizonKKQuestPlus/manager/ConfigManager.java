@@ -177,7 +177,7 @@ public class ConfigManager {
     /**
      * 解析收集物品配置
      * 支持两种格式:
-     * 1. 完整格式: { display: "xxx", value: 10 或 "@1jie", max_amount: 20 }
+     * 1. 完整格式: { value: 10 或 "@1jie", max_amount: 20 }
      * 2. 简写格式: "@1jie"
      */
     private CollectItemConfig parseCollectItemConfig(String itemId, ConfigurationSection parentSec) {
@@ -187,7 +187,7 @@ public class ConfigManager {
         if (rawValue instanceof String) {
             String valueStr = (String) rawValue;
             int value = resolveValue(valueStr);
-            return new CollectItemConfig(itemId, itemId, value, randomCollectMaxAmount);
+            return new CollectItemConfig(itemId, value, randomCollectMaxAmount);
         }
 
         // 完整格式
@@ -196,12 +196,11 @@ public class ConfigManager {
             return null;
         }
 
-        String display = itemSec.getString("display", itemId);
         String valueStr = itemSec.getString("value", "0");
         int value = resolveValue(valueStr);
         int maxAmount = itemSec.getInt("max_amount", randomCollectMaxAmount);
 
-        return new CollectItemConfig(itemId, display, value, maxAmount);
+        return new CollectItemConfig(itemId, value, maxAmount);
     }
 
     /**
