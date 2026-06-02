@@ -133,11 +133,19 @@ public class QuestConfig {
             if (r.hasStone()) {
                 String stoneName = stoneTypes != null ? stoneTypes.get(r.getStoneKey()) : null;
                 String name = stoneName != null ? stoneName : r.getStoneKey();
-                String line = "&f" + name + " &a×" + r.getStoneAmount();
+                // 使用NI物品的显示名称（包含颜色代码）
+                String niName = getNIItemName(stoneName);
+                if (niName != null) {
+                    name = niName;
+                }
+                String line = name + " &a×" + r.getStoneAmount();
                 parts.add(line);
             }
             if (r.hasItem()) {
-                String line = "&f" + r.getItemId() + " &a×" + r.getItemAmount();
+                // 使用NI物品的显示名称（包含颜色代码）
+                String niName = getNIItemName(r.getItemId());
+                String name = niName != null ? niName : r.getItemId();
+                String line = name + " &a×" + r.getItemAmount();
                 parts.add(line);
             }
             if (r.hasCommands()) {
@@ -145,6 +153,25 @@ public class QuestConfig {
             }
         }
         return parts.isEmpty() ? Collections.singletonList("&7无") : parts;
+    }
+
+    /**
+     * 获取NI物品的显示名称（包含颜色代码）
+     * @param itemId NI物品ID
+     * @return 显示名称，如果获取失败返回null
+     */
+    private String getNIItemName(String itemId) {
+        if (itemId == null || itemId.isEmpty()) {
+            return null;
+        }
+        try {
+            org.bukkit.inventory.ItemStack item = com.horizonkk.horizonKKQuestPlus.hook.NeigeitemsHook.getItemStack(itemId, null);
+            if (item != null && item.hasItemMeta() && item.getItemMeta().hasDisplayName()) {
+                return item.getItemMeta().getDisplayName();
+            }
+        } catch (Exception ignored) {
+        }
+        return null;
     }
 
     /**

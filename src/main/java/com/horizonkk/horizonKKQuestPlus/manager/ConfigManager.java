@@ -98,6 +98,17 @@ public class ConfigManager {
             }
         }
 
+        // 加载灵石转换阈值
+        ConfigurationSection thresholdSec = yaml.getConfigurationSection("stone_thresholds");
+        if (thresholdSec != null) {
+            StoneConverter.setMidThreshold(thresholdSec.getInt("mid", 64));
+            StoneConverter.setHighThreshold(thresholdSec.getInt("high", 2048));
+            StoneConverter.setTopThreshold(thresholdSec.getInt("top", 65536));
+        }
+        plugin.getLogger().info("灵石转换阈值 - 中品: " + StoneConverter.getMidThreshold()
+                + ", 上品: " + StoneConverter.getHighThreshold()
+                + ", 极品: " + StoneConverter.getTopThreshold());
+
         // 加载悬赏令物品外观
         ConfigurationSection itemSec = yaml.getConfigurationSection("item");
         if (itemSec != null) {

@@ -168,17 +168,21 @@ public class QuestManager {
      * @return 生成的任务实例
      */
     private QuestInstance generateRandomCollectQuest(QuestRequirement requirement) {
-        // 计算奖励 (总价值 × 系数1.0)
+        // 计算奖励 (总价值 × 系数1.0，以灵石为单位)
         int rewardAmount = requirement.getTotalValue();
 
         // 生成任务ID
         String questId = "RCL-" + UUID.randomUUID().toString().substring(0, 6);
 
-        // 构建奖励信息
+        // 构建奖励信息 - 将灵石转换为最优组合
         List<String> rewardStrings = new ArrayList<>();
         // 根据等级选择灵石类型
-        String stoneKey = getStoneKeyByLevel(requirement.getLevel());
-        rewardStrings.add(stoneKey + ":" + rewardAmount);
+        String stoneKey = StoneConverter.getStoneKeyByLevel(requirement.getLevel());
+        // 转换为最优灵石组合
+        Map<String, Integer> stoneMap = StoneConverter.convertStone(stoneKey, rewardAmount);
+        for (Map.Entry<String, Integer> entry : stoneMap.entrySet()) {
+            rewardStrings.add(entry.getKey() + ":" + entry.getValue());
+        }
 
         List<RewardInfo> rewards = RewardInfo.parseList(rewardStrings);
 
@@ -266,19 +270,6 @@ public class QuestManager {
      * @param level 任务等级
      * @return 灵石类型key
      */
-    private String getStoneKeyByLevel(QuestLevel level) {
-        switch (level) {
-            case SKY:
-                return "jpls";
-            case EARTH:
-                return "spls";
-            case MYSTERY:
-                return "zpls";
-            case HUMAN:
-            default:
-                return "xpls";
-        }
-    }
 
     private void cleanExpiredPublicQuests() {
         publicQuestPool.removeIf(i -> {
