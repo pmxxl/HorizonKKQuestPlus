@@ -2,6 +2,8 @@ package com.horizonkk.horizonKKQuestPlus.model;
 
 import com.horizonkk.horizonKKQuestPlus.hook.TYLcalendarHook;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -39,6 +41,10 @@ public class QuestInstance {
 
     private final boolean isPublic;        // 是否为系统公共悬赏
     private final boolean isAnonymous;     // 发布人是否匿名 (显示"匿名修士")
+
+    // 押金信息
+    private Map<String, Integer> depositStoneMap;  // 押金灵石组合 {灵石key → 数量}
+    private int depositValue;                       // 押金价值（以下品灵石为单位）
 
     public QuestInstance(String questId, String templateId, String publisherName,
                          UUID publisherUuid, boolean isPublic, boolean isAnonymous) {
@@ -193,4 +199,24 @@ public class QuestInstance {
     public void setAccepterUuid(UUID accepterUuid) { this.accepterUuid = accepterUuid; }
     public void setStatus(QuestStatus status) { this.status = status; }
     public void setProgress(int progress) { this.progress = progress; }
+
+    // ==================== 押金相关 ====================
+
+    public Map<String, Integer> getDepositStoneMap() { return depositStoneMap; }
+    public int getDepositValue() { return depositValue; }
+
+    public void setDepositStoneMap(Map<String, Integer> depositStoneMap) {
+        this.depositStoneMap = depositStoneMap;
+    }
+
+    public void setDepositValue(int depositValue) {
+        this.depositValue = depositValue;
+    }
+
+    /**
+     * 检查是否有押金
+     */
+    public boolean hasDeposit() {
+        return depositStoneMap != null && !depositStoneMap.isEmpty() && depositValue > 0;
+    }
 }

@@ -9,6 +9,7 @@ import com.horizonkk.horizonKKQuestPlus.model.QuestConfig;
 import com.horizonkk.horizonKKQuestPlus.model.QuestInstance;
 import com.horizonkk.horizonKKQuestPlus.model.QuestStatus;
 import com.horizonkk.horizonKKQuestPlus.model.QuestType;
+import com.horizonkk.horizonKKQuestPlus.model.RewardInfo;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -19,6 +20,8 @@ import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -158,6 +161,25 @@ public class QuestListListener implements Listener {
         // 发放奖励
         questManager.giveRewards(player, template.getRewards());
 
+        // 返还押金
+        if (instance.hasDeposit()) {
+            List<RewardInfo> depositRewards = new ArrayList<>();
+            for (Map.Entry<String, Integer> entry : instance.getDepositStoneMap().entrySet()) {
+                depositRewards.add(new RewardInfo(entry.getKey(), entry.getValue(), null, 0, null));
+            }
+            questManager.giveRewards(player, depositRewards);
+
+            // 通知玩家押金返还
+            StringBuilder depositMsg = new StringBuilder("&7押金已退还: ");
+            boolean first = true;
+            for (Map.Entry<String, Integer> entry : instance.getDepositStoneMap().entrySet()) {
+                if (!first) depositMsg.append("&7, ");
+                depositMsg.append("&f").append(getStoneDisplayName(entry.getKey())).append(" &a×").append(entry.getValue());
+                first = false;
+            }
+            player.sendMessage(colorize(depositMsg.toString()));
+        }
+
         // 发送消息
         player.sendMessage(colorize("&a&l任务完成!"));
         player.sendMessage(colorize("&7奖励已发放到背包"));
@@ -231,6 +253,21 @@ public class QuestListListener implements Listener {
         if (event.getInventory().getHolder() instanceof QuestListHolder) {
             // No cleanup needed
         }
+    }
+
+    /**
+     * 获取灵石的显示名称
+     */
+    private String getStoneDisplayName(String stoneKey) {
+        String stoneItemId = configManager.getStoneTypes().get(stoneKey);
+        if (stoneItemId != null) {
+            ItemStack item = NeigeitemsHook.getItemStack(stoneItemId, null);
+            if (item != null && item.hasItemMeta() && item.getItemMeta().hasDisplayName()) {
+                return item.getItemMeta().getDisplayName();
+            }
+            return stoneItemId;
+        }
+        return stoneKey;
     }
 
     private String colorize(String s) {

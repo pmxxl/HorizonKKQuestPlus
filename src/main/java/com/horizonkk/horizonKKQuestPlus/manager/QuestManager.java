@@ -331,9 +331,9 @@ public class QuestManager {
 
         plugin.getLogger().info("[DEBUG] 模板找到: " + template.getId());
 
-        // 计算并扣除手续费
-        if (configManager.isAcceptFeeEnabled()) {
-            double feeRate = configManager.getAcceptFeeRate();
+        // 计算并扣除押金
+        if (configManager.isQuestDepositEnabled()) {
+            double depositRate = configManager.getQuestDepositRate();
 
             // 获取奖励灵石列表
             List<RewardInfo> rewards = template.getRewards();
@@ -346,57 +346,29 @@ public class QuestManager {
                 }
             }
 
-            // 计算手续费
+            // 计算押金
             int totalValue = StoneConverter.calculateTotalValue(rewardStoneMap);
-            int feeValue = StoneConverter.calculateFee(totalValue, feeRate);
+            int depositValue = StoneConverter.calculateFee(totalValue, depositRate);
 
-            if (feeValue > 0) {
-                // 检查玩家是否有足够的灵石支付手续费
-                Map<String, Integer> feeStoneMap = StoneConverter.calculateFeeStoneMap(rewardStoneMap, feeRate);
+            if (depositValue > 0) {
+                // 计算押金灵石组合
+                Map<String, Integer> depositStoneMap = StoneConverter.calculateFeeStoneMap(rewardStoneMap, depositRate);
 
-                // TODO: 检查玩家背包中是否有足够的灵石
-                // 这里简化处理，直接从奖励中扣除手续费
+                // 存储押金信息到任务实例
+                instance.setDepositStoneMap(depositStoneMap);
+                instance.setDepositValue(depositValue);
 
-                // 扣除手续费后的奖励
-                Map<String, Integer> newRewardMap = StoneConverter.deductFee(rewardStoneMap, feeRate);
-
-                // 更新任务奖励
-                List<RewardInfo> newRewards = new ArrayList<>();
-                for (Map.Entry<String, Integer> entry : newRewardMap.entrySet()) {
-                    newRewards.add(new RewardInfo(entry.getKey(), entry.getValue(), null, 0, null));
-                }
-
-                // 创建新的任务配置（带手续费扣除后的奖励）
-                QuestConfig newTemplate = new QuestConfig(
-                        template.getId(),
-                        template.getType(),
-                        template.getLevel(),
-                        template.getTarget(),
-                        template.getTargetAmount(),
-                        newRewards,
-                        template.getTimeLimit(),
-                        template.getDescription(),
-                        template.getDescriptionLines(),
-                        template.isRepeatable(),
-                        template.getMessages()
-                );
-
-                // 存储新的任务配置
-                configManager.addQuestTemplate(templateId, newTemplate);
-
-                // 更新模板引用
-                template = newTemplate;
-
-                // 通知玩家手续费扣除
-                Map<String, Integer> feeDisplay = StoneConverter.convertFromLow(feeValue);
-                StringBuilder feeMsg = new StringBuilder("&7接取手续费: ");
+                // 通知玩家押金扣除
+                Map<String, Integer> depositDisplay = StoneConverter.convertFromLow(depositValue);
+                StringBuilder depositMsg = new StringBuilder("&7接取押金: ");
                 boolean first = true;
-                for (Map.Entry<String, Integer> entry : feeDisplay.entrySet()) {
-                    if (!first) feeMsg.append("&7, ");
-                    feeMsg.append("&f").append(getStoneDisplayName(entry.getKey())).append(" &a×").append(entry.getValue());
+                for (Map.Entry<String, Integer> entry : depositDisplay.entrySet()) {
+                    if (!first) depositMsg.append("&7, ");
+                    depositMsg.append("&f").append(getStoneDisplayName(entry.getKey())).append(" &a×").append(entry.getValue());
                     first = false;
                 }
-                player.sendMessage(colorize(feeMsg.toString()));
+                player.sendMessage(colorize(depositMsg.toString()));
+                player.sendMessage(colorize("&7完成任务后押金将全额退还"));
             }
         }
 
@@ -460,6 +432,22 @@ public class QuestManager {
         // 发放奖励
         giveRewards(player, template.getRewards());
 
+        // 返还押金
+        if (instance.hasDeposit()) {
+            giveRewards(player, convertDepositToRewards(instance.getDepositStoneMap()));
+
+            // 通知玩家押金返还
+            Map<String, Integer> depositDisplay = StoneConverter.convertFromLow(instance.getDepositValue());
+            StringBuilder depositMsg = new StringBuilder("&7押金已退还: ");
+            boolean first = true;
+            for (Map.Entry<String, Integer> entry : depositDisplay.entrySet()) {
+                if (!first) depositMsg.append("&7, ");
+                depositMsg.append("&f").append(getStoneDisplayName(entry.getKey())).append(" &a×").append(entry.getValue());
+                first = false;
+            }
+            player.sendMessage(colorize(depositMsg.toString()));
+        }
+
         String msg = template.getMessage("completed");
         if (msg.isEmpty()) msg = "&a悬赏完成! &f%quest% &a奖励已发放!";
         msg = msg.replace("%quest%", template.getId())
@@ -474,6 +462,17 @@ public class QuestManager {
                         + " &a已被 &f" + player.getName() + " &a完成!"));
             }
         }
+    }
+
+    /**
+     * 将押金灵石组合转换为奖励列表
+     */
+    private List<RewardInfo> convertDepositToRewards(Map<String, Integer> depositStoneMap) {
+        List<RewardInfo> rewards = new ArrayList<>();
+        for (Map.Entry<String, Integer> entry : depositStoneMap.entrySet()) {
+            rewards.add(new RewardInfo(entry.getKey(), entry.getValue(), null, 0, null));
+        }
+        return rewards;
     }
 
     // ==================== 发放奖励 ====================
