@@ -57,7 +57,7 @@ public class QuestPublishListener implements Listener {
         if (slot < templates.size()) {
             String templateId = templates.get(slot).getId();
             player.closeInventory();
-            questManager.publishQuest(player, templateId);
+            questManager.publishQuest(player, templateId, false);  // GUI发布默认实名
         }
     }
 

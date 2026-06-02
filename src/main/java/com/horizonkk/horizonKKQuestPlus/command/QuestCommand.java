@@ -86,10 +86,11 @@ public class QuestCommand implements CommandExecutor, TabCompleter {
                 }
                 Player pubPlayer = (Player) sender;
                 if (args.length < 2) {
-                    sender.sendMessage("§c用法: /" + label + " publish <任务模板ID>");
+                    sender.sendMessage("§c用法: /" + label + " publish <任务模板ID> [anonymous|named]");
                     return true;
                 }
-                questManager.publishQuest(pubPlayer, args[1]);
+                boolean anonymous = args.length >= 3 && args[2].equalsIgnoreCase("anonymous");
+                questManager.publishQuest(pubPlayer, args[1], anonymous);
                 break;
 
             case "list":
@@ -152,6 +153,12 @@ public class QuestCommand implements CommandExecutor, TabCompleter {
                         }
                     }
                     break;
+            }
+        } else if (args.length == 3 && args[0].equalsIgnoreCase("publish")) {
+            String partial = args[2].toLowerCase();
+            for (String t : new String[]{"anonymous", "named"}) {
+                if (t.startsWith(partial)) completions.add(t);
+            }
                 case "list":
                     for (String t : new String[]{"public", "accepted", "published"}) {
                         if (t.startsWith(args[1].toLowerCase())) completions.add(t);
@@ -173,7 +180,7 @@ public class QuestCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage("§6====== HorizonKKQuestPlus ======");
         sender.sendMessage("§e/" + label + " §7- 打开悬赏主菜单");
         sender.sendMessage("§e/" + label + " open [玩家] §7- 为指定玩家打开菜单");
-        sender.sendMessage("§e/" + label + " publish <模板ID> §7- 发布悬赏");
+        sender.sendMessage("§e/" + label + " publish <模板ID> [anonymous|named] §7- 发布悬赏");
         sender.sendMessage("§e/" + label + " list <public|accepted|published> §7- 查看悬赏数量");
         sender.sendMessage("§e/" + label + " reload §7- 重载配置");
     }

@@ -59,9 +59,9 @@ public class IconBuilder {
             return buildFallback("§c未知等级");
         }
 
-        String name = itemConfig.getName().replace("{player}", instance.getPublisherName());
+        String name = itemConfig.getName().replace("{player}", instance.getDisplayPublisherName());
         String rewardText = template.buildRewardText(configManager.getStoneTypes());
-        List<String> lore = itemConfig.buildLore(instance.getPublisherName(),
+        List<String> lore = itemConfig.buildLore(instance.getDisplayPublisherName(),
                 template.getDescription(), rewardText);
 
         // 附加状态信息

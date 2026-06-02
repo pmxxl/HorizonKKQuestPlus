@@ -18,10 +18,12 @@ public class QuestInstance {
     private final long publishTime;        // 发布时间
     private long acceptTime;               // 接取时间
     private long expireTime;               // 过期时间 (0=永不过期)
-    private final boolean isPublic;        // 是否为公共悬赏
+    private final boolean isPublic;        // 是否为系统公共悬赏
+    private final boolean isAnonymous;     // 发布人是否匿名 (显示"匿名修士")
 
     public QuestInstance(String questId, String templateId, String publisherName,
-                         UUID publisherUuid, long publishTime, long expireTime, boolean isPublic) {
+                         UUID publisherUuid, long publishTime, long expireTime,
+                         boolean isPublic, boolean isAnonymous) {
         this.questId = questId;
         this.templateId = templateId;
         this.publisherName = publisherName;
@@ -31,6 +33,13 @@ public class QuestInstance {
         this.publishTime = publishTime;
         this.expireTime = expireTime;
         this.isPublic = isPublic;
+        this.isAnonymous = isAnonymous;
+    }
+
+    // 兼容旧构造器
+    public QuestInstance(String questId, String templateId, String publisherName,
+                         UUID publisherUuid, long publishTime, long expireTime, boolean isPublic) {
+        this(questId, templateId, publisherName, publisherUuid, publishTime, expireTime, isPublic, false);
     }
 
     public String getQuestId() { return questId; }
@@ -45,6 +54,14 @@ public class QuestInstance {
     public long getAcceptTime() { return acceptTime; }
     public long getExpireTime() { return expireTime; }
     public boolean isPublic() { return isPublic; }
+    public boolean isAnonymous() { return isAnonymous; }
+
+    /**
+     * 获取用于显示的发布人名称 (匿名时返回"匿名修士")
+     */
+    public String getDisplayPublisherName() {
+        return isAnonymous ? "匿名修士" : publisherName;
+    }
 
     public void setAccepterName(String accepterName) { this.accepterName = accepterName; }
     public void setAccepterUuid(UUID accepterUuid) { this.accepterUuid = accepterUuid; }

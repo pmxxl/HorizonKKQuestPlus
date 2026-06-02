@@ -39,8 +39,9 @@ public class QuestManager {
 
     /**
      * 玩家发布悬赏
+     * @param anonymous true = 匿名 (显示"匿名修士"), false = 实名
      */
-    public QuestInstance publishQuest(Player player, String templateId) {
+    public QuestInstance publishQuest(Player player, String templateId, boolean anonymous) {
         QuestConfig template = configManager.getQuestTemplate(templateId);
         if (template == null) {
             player.sendMessage("§c悬赏任务模板不存在: " + templateId);
@@ -53,8 +54,9 @@ public class QuestManager {
                 ? now + template.getTimeLimit() * 1000L
                 : 0;
 
-        QuestInstance instance = new QuestInstance(questId, templateId, player.getName(),
-                player.getUniqueId(), now, expireTime, false);
+        String displayName = anonymous ? "匿名修士" : player.getName();
+        QuestInstance instance = new QuestInstance(questId, templateId, displayName,
+                player.getUniqueId(), now, expireTime, false, anonymous);
 
         allQuests.put(questId, instance);
         playerDataManager.addPublishedQuest(player.getUniqueId(), instance);
@@ -90,8 +92,8 @@ public class QuestManager {
             String questId = "PUB-" + UUID.randomUUID().toString().substring(0, 6);
             long expireTime = now + configManager.getPublicQuestInterval() * 1000L;
 
-            QuestInstance instance = new QuestInstance(questId, templateId, "系统",
-                    null, now, expireTime, true);
+            QuestInstance instance = new QuestInstance(questId, templateId, "匿名修士",
+                    null, now, expireTime, true, true);
 
             allQuests.put(questId, instance);
             publicQuestPool.add(instance);
@@ -313,10 +315,11 @@ public class QuestManager {
         QuestItemConfig itemConfig = configManager.getItemConfig(template.getLevel());
         if (itemConfig == null) return null;
 
-        String name = itemConfig.getName().replace("{player}", playerName);
+        String displayName = instance.getDisplayPublisherName();
+        String name = itemConfig.getName().replace("{player}", displayName);
 
         String rewardText = template.buildRewardText(configManager.getStoneTypes());
-        List<String> lore = itemConfig.buildLore(playerName, template.getDescription(), rewardText);
+        List<String> lore = itemConfig.buildLore(displayName, template.getDescription(), rewardText);
 
         // 附加悬赏ID和进度信息
         lore.add("");

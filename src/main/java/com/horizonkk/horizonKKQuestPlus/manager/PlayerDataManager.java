@@ -113,6 +113,7 @@ public class PlayerDataManager {
         map.put("accept_time", inst.getAcceptTime());
         map.put("expire_time", inst.getExpireTime());
         map.put("is_public", inst.isPublic());
+        map.put("is_anonymous", inst.isAnonymous());
         return map;
     }
 
@@ -127,9 +128,10 @@ public class PlayerDataManager {
         long publishTime = getLong(map, "publish_time");
         long expireTime = getLong(map, "expire_time");
         boolean isPublic = getBoolean(map, "is_public");
+        boolean isAnonymous = getBoolean(map, "is_anonymous");
 
         QuestInstance inst = new QuestInstance(questId, templateId, publisherName,
-                publisherUuid, publishTime, expireTime, isPublic);
+                publisherUuid, publishTime, expireTime, isPublic, isAnonymous);
 
         inst.setAccepterName((String) map.get("accepter_name"));
         String accUuidStr = (String) map.get("accepter_uuid");
