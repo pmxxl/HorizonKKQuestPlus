@@ -83,6 +83,40 @@ public class QuestConfig {
     }
 
     /**
+     * 获取需要的物品列表（从 target 解析）
+     * target 格式: "物品ID1:数量1,物品ID2:数量2"
+     *
+     * @return 物品ID → 数量 的映射
+     */
+    public Map<String, Integer> getRequiredItems() {
+        Map<String, Integer> items = new LinkedHashMap<>();
+        if (target == null || target.isEmpty()) {
+            return items;
+        }
+
+        // 解析格式: "物品ID1:数量1,物品ID2:数量2"
+        String[] pairs = target.split(",");
+        for (String pair : pairs) {
+            String[] parts = pair.trim().split(":");
+            if (parts.length == 2) {
+                try {
+                    String itemId = parts[0].trim();
+                    int amount = Integer.parseInt(parts[1].trim());
+                    items.put(itemId, amount);
+                } catch (NumberFormatException ignored) {
+                }
+            }
+        }
+
+        // 如果没有解析到物品，使用旧格式（单个目标）
+        if (items.isEmpty() && targetAmount > 0) {
+            items.put(target, targetAmount);
+        }
+
+        return items;
+    }
+
+    /**
      * 构建悬赏令上的奖励描述文本
      */
     /**

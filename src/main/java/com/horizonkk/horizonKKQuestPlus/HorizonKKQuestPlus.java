@@ -5,6 +5,7 @@ import com.horizonkk.horizonKKQuestPlus.event.QuestListListener;
 import com.horizonkk.horizonKKQuestPlus.event.QuestMenuListener;
 import com.horizonkk.horizonKKQuestPlus.event.QuestProgressListener;
 import com.horizonkk.horizonKKQuestPlus.event.QuestPublishListener;
+import com.horizonkk.horizonKKQuestPlus.event.QuestSubmitListener;
 import com.horizonkk.horizonKKQuestPlus.manager.ConfigManager;
 import com.horizonkk.horizonKKQuestPlus.manager.PlayerDataManager;
 import com.horizonkk.horizonKKQuestPlus.manager.QuestManager;
@@ -43,6 +44,8 @@ public final class HorizonKKQuestPlus extends JavaPlugin {
                 new QuestPublishListener(this, questManager, configManager), this);
         getServer().getPluginManager().registerEvents(
                 new QuestProgressListener(questManager), this);
+        getServer().getPluginManager().registerEvents(
+                new QuestSubmitListener(this, questManager, configManager), this);
 
         // 注册命令
         QuestCommand cmd = new QuestCommand(this, questManager, configManager);

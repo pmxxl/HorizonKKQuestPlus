@@ -4,8 +4,10 @@ import com.horizonkk.horizonKKQuestPlus.HorizonKKQuestPlus;
 import com.horizonkk.horizonKKQuestPlus.gui.*;
 import com.horizonkk.horizonKKQuestPlus.manager.ConfigManager;
 import com.horizonkk.horizonKKQuestPlus.manager.QuestManager;
+import com.horizonkk.horizonKKQuestPlus.model.QuestConfig;
 import com.horizonkk.horizonKKQuestPlus.model.QuestInstance;
 import com.horizonkk.horizonKKQuestPlus.model.QuestStatus;
+import com.horizonkk.horizonKKQuestPlus.model.QuestType;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -81,9 +83,20 @@ public class QuestListListener implements Listener {
                 }
                 break;
             case ACCEPTED:
-                player.sendMessage(colorize("&7悬赏 &f" + instance.getQuestId()
-                        + " &7进度: &f" + instance.getProgress() + "&7/&f"
-                        + configManager.getQuestTemplate(instance.getTemplateId()).getTargetAmount()));
+                // 检查任务类型
+                QuestConfig template = configManager.getQuestTemplate(instance.getTemplateId());
+                if (template != null && template.getType() == QuestType.COLLECT) {
+                    // 收集类任务 - 打开物品提交界面
+                    player.closeInventory();
+                    Bukkit.getScheduler().runTask(plugin, () -> {
+                        new QuestSubmitGUI(plugin, questManager, configManager, player, instance).open();
+                    });
+                } else {
+                    // 其他类型任务 - 显示进度
+                    player.sendMessage(colorize("&7悬赏 &f" + instance.getQuestId()
+                            + " &7进度: &f" + instance.getProgress() + "&7/&f"
+                            + (template != null ? template.getTargetAmount() : "?")));
+                }
                 break;
             case MY_PUBLISHED:
                 if (instance.getStatus() == QuestStatus.PUBLISHED) {

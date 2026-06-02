@@ -418,7 +418,7 @@ public class QuestManager {
 
     // ==================== 发放奖励 ====================
 
-    private void giveRewards(Player player, List<RewardInfo> rewards) {
+    public void giveRewards(Player player, List<RewardInfo> rewards) {
         for (RewardInfo reward : rewards) {
             if (reward.hasStone()) {
                 // 灵石 = NI物品, 从stone_types获取NI物品ID
