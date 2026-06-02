@@ -1,0 +1,21 @@
+name: HorizonKKQuestPlus
+version: '${project.version}'
+main: com.horizonkk.horizonKKQuestPlus.HorizonKKQuestPlus
+api-version: '1.21'
+authors: [ HorizonKK ]
+description: 高度定制化的随机任务悬赏系统
+softdepend: [ NeigeItems ]
+
+commands:
+  horizonquest:
+    description: HorizonKKQuestPlus 主命令
+    usage: /<command> <reload|open <玩家>|publish <模板ID>|list>
+    aliases: [quest, hkq]
+
+permissions:
+  horizonkkquestplus.admin:
+    description: 管理员权限 - 重载配置和打开菜单
+    default: op
+  horizonkkquestplus.use:
+    description: 允许使用悬赏系统
+    default: true

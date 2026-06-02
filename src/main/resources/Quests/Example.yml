@@ -1,0 +1,132 @@
+# ============================================
+# HorizonKKQuestPlus - 悬赏任务模板示例
+# ============================================
+
+# 灵石货币定义 (可覆盖全局定义, key → NI物品ID)
+stone_types:
+  xpls: "下品灵石"
+  zpls: "中品灵石"
+
+# ==================== 任务模板 ====================
+quests:
+
+  # ========== 收集类 ==========
+  收集赤铜:
+    type: collect                # 任务类型: collect(收集) / hunt(猎杀) / explore(探索) / escort(护送)
+    level: rlp                   # 悬赏等级: rlp(人级) / xlp(玄级) / dlp(地级) / tlp(天级)
+    target: "赤铜"               # 目标: 物品ID
+    target_amount: 10            # 需求数量
+    rewards:
+      - "xpls:100"               # 灵石奖励: 100下品灵石
+      - "item:赤铜:5"            # 物品奖励: 5个赤铜
+    time_limit: 3600             # 时间限制(秒), 0=无限制
+    description: "&f收集 &a10 &f个赤铜矿石"
+    repeatable: true
+    messages:
+      accepted: "&a成功接取悬赏 &f%quest% &a! 收集10个赤铜即可完成"
+      completed: "&a悬赏完成! 收集了10个赤铜, 奖励已发放!"
+      not_enough_materials: "&c材料不足!"
+
+  收集玄铁:
+    type: collect
+    level: xlp
+    target: "玄铁"
+    target_amount: 5
+    rewards:
+      - "zpls:2"
+    time_limit: 7200
+    description: "&f收集 &a5 &f个玄铁"
+    repeatable: true
+
+  采集魔法石:
+    type: collect
+    level: dlp
+    target: "魔法石"
+    target_amount: 3
+    rewards:
+      - "zpls:10"
+      - "item:魔法石:1"
+    time_limit: 10800
+    description: "&f收集 &a3 &f个魔法石"
+    repeatable: false
+
+  # ========== 猎杀类 ==========
+  猎杀僵尸:
+    type: hunt
+    level: rlp
+    target: "ZOMBIE"             # 生物类型 (EntityType 名称)
+    target_amount: 20
+    rewards:
+      - "xpls:50"
+    time_limit: 1800
+    description: "&f猎杀 &a20 &f只僵尸"
+    repeatable: true
+    messages:
+      accepted: "&a接取猎杀任务! 击杀20只僵尸"
+      completed: "&a猎杀完成! 成功击杀20只僵尸!"
+
+  猎杀骷髅:
+    type: hunt
+    level: rlp
+    target: "SKELETON"
+    target_amount: 15
+    rewards:
+      - "xpls:60"
+      - "item:妖兽骨:3"
+    time_limit: 2400
+    description: "&f猎杀 &a15 &f只骷髅"
+    repeatable: true
+
+  猎杀末影人:
+    type: hunt
+    level: xlp
+    target: "ENDERMAN"
+    target_amount: 5
+    rewards:
+      - "zpls:5"
+      - "cmd:say %player% 完成了猎杀末影人悬赏!|console"
+    time_limit: 3600
+    description: "&f猎杀 &a5 &f只末影人"
+    repeatable: true
+
+  # ========== 探索类 ==========
+  探索主城:
+    type: explore
+    level: rlp
+    target: "spawn"              # 目标区域名
+    target_amount: 1             # 到达即完成
+    rewards:
+      - "xpls:30"
+    time_limit: 600
+    description: "&f前往 &a主城 &f广场"
+    repeatable: false
+
+  # ========== 护送类 ==========
+  护送商人:
+    type: escort
+    level: dlp
+    target: "merchant_npc"       # 目标NPC ID
+    target_amount: 1
+    rewards:
+      - "zpls:15"
+      - "item:灵晶:1"
+    time_limit: 1800
+    description: "&f护送商人安全到达目的地"
+    repeatable: false
+
+  # ========== 高级悬赏 ==========
+  猎杀凋零:
+    type: hunt
+    level: tlp
+    target: "WITHER"
+    target_amount: 1
+    rewards:
+      - "jpls:50"
+      - "item:龙鳞:3"
+      - "cmd:title %player% title {\"text\":\"屠龙勇士\",\"color\":\"gold\"}|console"
+    time_limit: 0               # 无时间限制
+    description: "&f猎杀 &c凋零 &f×1"
+    repeatable: false
+    messages:
+      accepted: "&c&l天级悬赏! 猎杀凋零!"
+      completed: "&6&l恭喜! 成功猎杀凋零!"
