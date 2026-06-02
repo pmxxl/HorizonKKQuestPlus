@@ -14,9 +14,9 @@ stone_types:
 # 以下品灵石为单位，当奖励价值达到阈值时才转换为更高品灵石
 # 例如: threshold_mid: 64 表示价值 >= 64 下品灵石时才给中品灵石
 stone_thresholds:
-  mid: 64           # 中品灵石阈值 (默认64，即2个中品灵石的价值)
-  high: 2048        # 上品灵石阈值 (默认2048，即2个上品灵石的价值)
-  top: 65536        # 极品灵石阈值 (默认65536，即2个极品灵石的价值)
+  mid: 500           # 中品灵石阈值 (默认64，即2个中品灵石的价值)
+  high: 15360        # 上品灵石阈值 (默认2048，即2个上品灵石的价值)
+  top: 491520        # 极品灵石阈值 (默认65536，即2个极品灵石的价值)
 
 # ==================== 悬赏令物品外观 ====================
 # {reward} 占位符会被替换为奖励列表（每行一个奖励）
@@ -90,8 +90,8 @@ random_collect:
   level_weights:
     rlp: 40              # 人级权重
     xlp: 30            # 玄级权重
-    dlp: 20              # 地级权重
-    tlp: 10                # 天级权重
+    dlp: 0              # 地级权重
+    tlp: 0                # 天级权重
 
 # ==================== 价值定义 ====================
 # 定义价值常量，供 collect_items 引用
@@ -183,85 +183,77 @@ collect_items:
 #       物品ID: {min: 最小数量, max: 最大数量}
 #     value_range: [最小价值, 最大价值]
 quest_templates:
-  # ========== 人级模板池 (价值 10-49) ==========
+  # ========== 人级模板池 (价值 10-299) ==========
   rlp:
     - id: "rlp_ore_01"
       items:
         赤铜: {min: 3, max: 8}
         精铁: {min: 2, max: 5}
-      value_range: [10, 49]
+      value_range: [10, 299]
 
     - id: "rlp_ore_02"
       items:
         剑痕石: {min: 5, max: 12}
         玄阳石: {min: 2, max: 4}
-      value_range: [10, 49]
+      value_range: [10, 299]
 
     - id: "rlp_herb_01"
       items:
-        灵草: {min: 4, max: 10}
         白藏土: {min: 3, max: 6}
-      value_range: [10, 49]
+      value_range: [10, 299]
 
     - id: "rlp_gem_01"
       items:
         青玉: {min: 3, max: 7}
         寒冰石: {min: 2, max: 5}
-      value_range: [10, 49]
+      value_range: [10, 299]
 
-  # ========== 玄级模板池 (价值 50-199) ==========
+  # ========== 玄级模板池 (价值 300-2048) ==========
   xlp:
     - id: "xlp_metal_01"
       items:
         玄铁: {min: 3, max: 6}
-        秘银: {min: 2, max: 4}
-      value_range: [50, 199]
-
-    - id: "xlp_gem_01"
-      items:
-        星辰石: {min: 2, max: 4}
-        龙血玉: {min: 1, max: 3}
-      value_range: [50, 199]
+      value_range: [300, 2048]
 
     - id: "xlp_mixed_01"
       items:
         玄铁: {min: 4, max: 8}
         风灵石: {min: 3, max: 6}
         雷灵石: {min: 2, max: 4}
-      value_range: [50, 199]
+      value_range: [300, 2048]
 
-  # ========== 地级模板池 (价值 200-499) ==========
-  dlp:
-    - id: "dlp_rare_01"
-      items:
-        天外陨铁: {min: 2, max: 4}
-        星辰石: {min: 3, max: 5}
-      value_range: [200, 499]
+  # # ========== 地级模板池 (价值 200-499) ==========
+  # dlp:
+  #   - id: "dlp_rare_01"
+  #     items:
+  #       天外陨铁: {min: 2, max: 4}
+  #       星辰石: {min: 3, max: 5}
+  #     value_range: [200, 499]
 
-    - id: "dlp_mixed_01"
-      items:
-        混沌晶石: {min: 1, max: 3}
-        龙血玉: {min: 2, max: 4}
-        天外陨铁: {min: 1, max: 2}
-      value_range: [200, 499]
+  #   - id: "dlp_mixed_01"
+  #     items:
+  #       混沌晶石: {min: 1, max: 3}
+  #       龙血玉: {min: 2, max: 4}
+  #       天外陨铁: {min: 1, max: 2}
+  #     value_range: [200, 499]
 
-  # ========== 天级模板池 (价值 500+) ==========
-  tlp:
-    - id: "tlp_legendary_01"
-      items:
-        太古神石: {min: 1, max: 3}
-        混沌晶石: {min: 2, max: 4}
-      value_range: [500, 999]
+  # # ========== 天级模板池 (价值 500+) ==========
+  # tlp:
+  #   - id: "tlp_legendary_01"
+  #     items:
+  #       太古神石: {min: 1, max: 3}
+  #       混沌晶石: {min: 2, max: 4}
+  #     value_range: [500, 999]
 
-    - id: "tlp_mythic_01"
-      items:
-        造化玉碟: {min: 1, max: 2}
-        鸿蒙紫气: {min: 1, max: 2}
-        太古神石: {min: 2, max: 3}
-      value_range: [500, 999]
+  #   - id: "tlp_mythic_01"
+  #     items:
+  #       造化玉碟: {min: 1, max: 2}
+  #       鸿蒙紫气: {min: 1, max: 2}
+  #       太古神石: {min: 2, max: 3}
+  #     value_range: [500, 999]
 
-    - id: "tlp_ultimate_01"
-      items:
-        混沌本源: {min: 1, max: 1}
-        造化玉碟: {min: 2, max: 3}
-      value_range: [1000, 2000]
+  #   - id: "tlp_ultimate_01"
+  #     items:
+  #       混沌本源: {min: 1, max: 1}
+  #       造化玉碟: {min: 2, max: 3}
+  #     value_range: [1000, 2000]

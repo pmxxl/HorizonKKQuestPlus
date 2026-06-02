@@ -192,18 +192,15 @@ public class StoneConverter {
     }
 
     /**
-     * 将灵石数量按最优组合转换为描述文本
+     * 将灵石数量按最优组合转换
+     * 注意：amount 已经是以下品灵石为单位的价值，不需要再转换
      *
-     * @param stoneKey   灵石类型
-     * @param amount     数量
-     * @param stoneTypes 灵石类型映射 (key → NI物品ID)
-     * @return 描述文本列表
+     * @param stoneKey   灵石类型（用于确定转换基准，但实际不使用）
+     * @param amount     价值数量（以下品灵石为单位）
+     * @return 灵石组合 {灵石key → 数量}
      */
     public static Map<String, Integer> convertStone(String stoneKey, int amount) {
-        // 先转换为下品灵石数量
-        int lowAmount = getStoneValue(stoneKey) * amount;
-
-        // 再转换为最优组合
-        return convertFromLow(lowAmount);
+        // amount 已经是以下品灵石为单位的价值，直接转换
+        return convertFromLow(amount);
     }
 }
