@@ -484,8 +484,34 @@ public class QuestManager {
         String displayName = instance.getDisplayPublisherName();
         String name = itemConfig.getName().replace("{player}", displayName);
 
-        String rewardText = template.buildRewardText(configManager.getStoneTypes());
-        List<String> lore = itemConfig.buildLore(displayName, template.getDescription(), rewardText);
+        // 获取奖励列表（每行一个奖励）
+        List<String> rewardList = template.buildRewardTextList(configManager.getStoneTypes());
+
+        // 先用占位符替换，之后手动插入奖励行
+        List<String> baseLore = itemConfig.buildLore(displayName, template.getDescription(), "{reward}");
+
+        // 构建最终lore：在 {reward} 占位符位置插入奖励列表
+        List<String> lore = new ArrayList<>();
+        boolean rewardInserted = false;
+        for (String line : baseLore) {
+            if (line.contains("{reward}") && !rewardInserted) {
+                // 替换占位符，插入所有奖励行
+                for (String rewardLine : rewardList) {
+                    lore.add(colorize(rewardLine));
+                }
+                rewardInserted = true;
+            } else if (!line.contains("{reward}")) {
+                lore.add(line);
+            }
+        }
+
+        // 如果没有找到占位符，在末尾添加奖励
+        if (!rewardInserted && !rewardList.isEmpty()) {
+            lore.add(colorize("&7 &7[  &a任务奖励  &7]     "));
+            for (String rewardLine : rewardList) {
+                lore.add(colorize(rewardLine));
+            }
+        }
 
         // 附加悬赏ID和进度信息
         lore.add("");

@@ -55,26 +55,42 @@ public class QuestConfig {
      * 构建悬赏令上的奖励描述文本
      */
     /**
-     * 构建奖励描述文本 (用于悬赏令lore)
+     * 构建奖励描述文本列表 (用于悬赏令lore，每个奖励单独一行)
      * @param stoneTypes 灵石类型映射 (key → NI物品ID)
+     * @return 奖励描述列表，每个元素为一行
      */
-    public String buildRewardText(Map<String, String> stoneTypes) {
-        if (rewards.isEmpty()) return "&7无";
+    public List<String> buildRewardTextList(Map<String, String> stoneTypes) {
+        if (rewards.isEmpty()) {
+            List<String> result = new ArrayList<>();
+            result.add("&7无");
+            return result;
+        }
 
         List<String> parts = new ArrayList<>();
         for (RewardInfo r : rewards) {
             if (r.hasStone()) {
                 String stoneName = stoneTypes != null ? stoneTypes.get(r.getStoneKey()) : null;
                 String name = stoneName != null ? stoneName : r.getStoneKey();
-                parts.add(name + "×" + r.getStoneAmount());
+                parts.add("&f" + name + " &a×" + r.getStoneAmount());
             }
             if (r.hasItem()) {
-                parts.add(r.getItemId() + "×" + r.getItemAmount());
+                parts.add("&f" + r.getItemId() + " &a×" + r.getItemAmount());
             }
             if (r.hasCommands()) {
-                parts.add("特殊奖励");
+                parts.add("&f特殊奖励 &a×1");
             }
         }
-        return parts.isEmpty() ? "&7无" : String.join(", ", parts);
+        return parts.isEmpty() ? Collections.singletonList("&7无") : parts;
+    }
+
+    /**
+     * 构建奖励描述文本 (兼容旧版本，单行显示)
+     * @param stoneTypes 灵石类型映射 (key → NI物品ID)
+     * @deprecated 使用 {@link #buildRewardTextList(Map)} 代替
+     */
+    @Deprecated
+    public String buildRewardText(Map<String, String> stoneTypes) {
+        List<String> list = buildRewardTextList(stoneTypes);
+        return String.join("&7, ", list);
     }
 }
