@@ -6,6 +6,7 @@ import com.horizonkk.horizonKKQuestPlus.manager.QuestManager;
 import com.horizonkk.horizonKKQuestPlus.model.*;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
@@ -64,9 +65,6 @@ public class IconBuilder {
         // 获取奖励列表（每行一个奖励）
         List<String> rewardList = template.buildRewardTextList(configManager.getStoneTypes());
 
-        // 获取任务描述（多行）
-        List<String> descriptionLines = template.getDescriptionLinesList();
-
         // 构建最终lore
         List<String> lore = new ArrayList<>();
         boolean rewardInserted = false;
@@ -76,9 +74,19 @@ public class IconBuilder {
         for (String line : itemConfig.getLore()) {
             // 检查是否包含 {text} 占位符
             if (line.contains("{text}") && !textInserted) {
-                // 替换占位符为描述列表
-                for (String descLine : descriptionLines) {
-                    lore.add(colorize(descLine));
+                // 根据任务类型生成不同的描述
+                if (template.getType() == QuestType.COLLECT && instance.getStatus() == QuestStatus.ACCEPTED) {
+                    // 收集类任务 - 显示背包数量/需求数量
+                    List<String> collectLines = buildCollectDescription(template, player);
+                    for (String collectLine : collectLines) {
+                        lore.add(colorize(collectLine));
+                    }
+                } else {
+                    // 其他任务 - 使用普通描述
+                    List<String> descriptionLines = template.getDescriptionLinesList();
+                    for (String descLine : descriptionLines) {
+                        lore.add(colorize(descLine));
+                    }
                 }
                 textInserted = true;
             }
@@ -190,6 +198,61 @@ public class IconBuilder {
             item.setItemMeta(meta);
         }
         return item;
+    }
+
+    /**
+     * 构建收集任务描述（显示背包数量/需求数量）
+     *
+     * @param template 任务配置
+     * @param player   玩家
+     * @return 描述行列表
+     */
+    private static List<String> buildCollectDescription(QuestConfig template, Player player) {
+        List<String> lines = new ArrayList<>();
+        Map<String, Integer> requiredItems = template.getRequiredItems();
+
+        for (Map.Entry<String, Integer> entry : requiredItems.entrySet()) {
+            String itemId = entry.getKey();
+            int required = entry.getValue();
+            int backpackCount = countItemsInInventory(player, itemId);
+            String displayName = getItemDisplayName(itemId);
+
+            // 格式: 物品名 当前背包数量 / 需求数量
+            if (backpackCount >= required) {
+                lines.add("&f" + displayName + " &a" + backpackCount + " &7/ &f" + required);
+            } else {
+                lines.add("&f" + displayName + " &c" + backpackCount + " &7/ &f" + required);
+            }
+        }
+
+        return lines;
+    }
+
+    /**
+     * 统计背包中某个物品的数量
+     */
+    private static int countItemsInInventory(Player player, String itemId) {
+        int count = 0;
+        for (ItemStack item : player.getInventory().getContents()) {
+            if (item == null || item.getType() == Material.AIR) continue;
+            String playerItemId = NeigeitemsHook.getSafeItemId(item);
+            if (itemId.equals(playerItemId)) {
+                count += item.getAmount();
+            }
+        }
+        return count;
+    }
+
+    /**
+     * 获取物品显示名称
+     */
+    private static String getItemDisplayName(String itemId) {
+        // 尝试从 NI 获取物品显示名称
+        ItemStack item = NeigeitemsHook.getItemStack(itemId, null);
+        if (item != null && item.hasItemMeta() && item.getItemMeta().hasDisplayName()) {
+            return item.getItemMeta().getDisplayName();
+        }
+        return itemId;
     }
 
     /**

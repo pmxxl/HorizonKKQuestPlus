@@ -2,6 +2,7 @@ package com.horizonkk.horizonKKQuestPlus.event;
 
 import com.horizonkk.horizonKKQuestPlus.HorizonKKQuestPlus;
 import com.horizonkk.horizonKKQuestPlus.gui.*;
+import com.horizonkk.horizonKKQuestPlus.hook.NeigeitemsHook;
 import com.horizonkk.horizonKKQuestPlus.manager.ConfigManager;
 import com.horizonkk.horizonKKQuestPlus.manager.QuestManager;
 import com.horizonkk.horizonKKQuestPlus.model.QuestConfig;
@@ -9,11 +10,16 @@ import com.horizonkk.horizonKKQuestPlus.model.QuestInstance;
 import com.horizonkk.horizonKKQuestPlus.model.QuestStatus;
 import com.horizonkk.horizonKKQuestPlus.model.QuestType;
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemStack;
+
+import java.util.Map;
 
 /**
  * 悬赏列表事件监听
@@ -83,14 +89,21 @@ public class QuestListListener implements Listener {
                 }
                 break;
             case ACCEPTED:
+                // 检查任务是否已完成
+                if (instance.getStatus() == QuestStatus.COMPLETED) {
+                    player.sendMessage(colorize("&e该任务已完成!"));
+                    return;
+                }
+                if (instance.getStatus() == QuestStatus.EXPIRED) {
+                    player.sendMessage(colorize("&c该任务已过期!"));
+                    return;
+                }
+
                 // 检查任务类型
                 QuestConfig template = configManager.getQuestTemplate(instance.getTemplateId());
                 if (template != null && template.getType() == QuestType.COLLECT) {
-                    // 收集类任务 - 打开物品提交界面
-                    player.closeInventory();
-                    Bukkit.getScheduler().runTask(plugin, () -> {
-                        new QuestSubmitGUI(plugin, questManager, configManager, player, instance).open();
-                    });
+                    // 收集类任务 - 直接检查并提交
+                    handleCollectQuestSubmit(player, instance, template, gui);
                 } else {
                     // 其他类型任务 - 显示进度
                     player.sendMessage(colorize("&7悬赏 &f" + instance.getQuestId()
@@ -105,6 +118,112 @@ public class QuestListListener implements Listener {
                 }
                 break;
         }
+    }
+
+    /**
+     * 处理收集任务提交
+     */
+    private void handleCollectQuestSubmit(Player player, QuestInstance instance,
+                                          QuestConfig template, QuestListGUI gui) {
+        Map<String, Integer> requiredItems = template.getRequiredItems();
+        Inventory inventory = player.getInventory();
+
+        // 检查背包中是否有足够的材料
+        for (Map.Entry<String, Integer> entry : requiredItems.entrySet()) {
+            String itemId = entry.getKey();
+            int required = entry.getValue();
+            int backpackCount = countItemsInInventory(player, itemId);
+
+            if (backpackCount < required) {
+                // 材料不足，显示提示并返回
+                String displayName = getItemDisplayName(itemId);
+                player.sendMessage(colorize("&c材料不足!"));
+                player.sendMessage(colorize("&7需要: &f" + displayName + " &a×" + required));
+                player.sendMessage(colorize("&7背包: &f" + displayName + " &c×" + backpackCount));
+                return;
+            }
+        }
+
+        // 材料足够，扣除物品
+        for (Map.Entry<String, Integer> entry : requiredItems.entrySet()) {
+            String itemId = entry.getKey();
+            int required = entry.getValue();
+            removeItemsFromInventory(player, itemId, required);
+        }
+
+        // 完成任务
+        instance.setStatus(QuestStatus.COMPLETED);
+        instance.setProgress(template.getTargetAmount());
+
+        // 发放奖励
+        questManager.giveRewards(player, template.getRewards());
+
+        // 发送消息
+        player.sendMessage(colorize("&a&l任务完成!"));
+        player.sendMessage(colorize("&7奖励已发放到背包"));
+
+        // 通知发布人
+        if (instance.getPublisherUuid() != null) {
+            Player publisher = Bukkit.getPlayer(instance.getPublisherUuid());
+            if (publisher != null && publisher.isOnline()) {
+                publisher.sendMessage(colorize("&a你发布的悬赏 &f" + instance.getQuestId()
+                        + " &a已被 &f" + player.getName() + " &a完成!"));
+            }
+        }
+
+        // 刷新界面
+        gui.refresh();
+    }
+
+    /**
+     * 统计背包中某个物品的数量
+     */
+    private int countItemsInInventory(Player player, String itemId) {
+        int count = 0;
+        for (ItemStack item : player.getInventory().getContents()) {
+            if (item == null || item.getType() == Material.AIR) continue;
+            String playerItemId = NeigeitemsHook.getSafeItemId(item);
+            if (itemId.equals(playerItemId)) {
+                count += item.getAmount();
+            }
+        }
+        return count;
+    }
+
+    /**
+     * 从背包中移除物品
+     */
+    private void removeItemsFromInventory(Player player, String itemId, int amount) {
+        Inventory inventory = player.getInventory();
+        int remaining = amount;
+
+        for (int i = 0; i < inventory.getSize() && remaining > 0; i++) {
+            ItemStack item = inventory.getItem(i);
+            if (item == null || item.getType() == Material.AIR) continue;
+
+            String playerItemId = NeigeitemsHook.getSafeItemId(item);
+            if (!itemId.equals(playerItemId)) continue;
+
+            int canRemove = Math.min(item.getAmount(), remaining);
+            if (canRemove >= item.getAmount()) {
+                inventory.setItem(i, null);
+            } else {
+                item.setAmount(item.getAmount() - canRemove);
+            }
+            remaining -= canRemove;
+        }
+    }
+
+    /**
+     * 获取物品显示名称
+     */
+    private String getItemDisplayName(String itemId) {
+        // 尝试从 NI 获取物品显示名称
+        ItemStack item = NeigeitemsHook.getItemStack(itemId, null);
+        if (item != null && item.hasItemMeta() && item.getItemMeta().hasDisplayName()) {
+            return item.getItemMeta().getDisplayName();
+        }
+        return itemId;
     }
 
     @EventHandler
