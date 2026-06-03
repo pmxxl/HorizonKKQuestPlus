@@ -59,6 +59,9 @@ public final class HorizonKKQuestPlus extends JavaPlugin {
             playerDataManager.loadPlayer(player.getUniqueId());
         }
 
+        // 加载悬赏数据（公共悬赏池、活跃任务等）
+        questManager.loadFromDisk();
+
         // 启动公共悬赏定时发布
         startPublicQuestTask();
 
@@ -72,6 +75,9 @@ public final class HorizonKKQuestPlus extends JavaPlugin {
         if (publicQuestTaskId != -1) {
             Bukkit.getScheduler().cancelTask(publicQuestTaskId);
         }
+
+        // 保存悬赏数据（公共悬赏池、活跃任务等）
+        questManager.saveToDisk();
 
         // 保存在线玩家数据
         for (Player player : Bukkit.getOnlinePlayers()) {
@@ -89,6 +95,11 @@ public final class HorizonKKQuestPlus extends JavaPlugin {
         if (!questDir.exists()) {
             questDir.mkdirs();
             saveResource("Quests/Example.yml", false);
+        }
+        // 创建数据目录
+        File dataDir = new File(getDataFolder(), "data");
+        if (!dataDir.exists()) {
+            dataDir.mkdirs();
         }
     }
 

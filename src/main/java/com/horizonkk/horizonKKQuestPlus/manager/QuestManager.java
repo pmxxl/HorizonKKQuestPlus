@@ -19,6 +19,7 @@ public class QuestManager {
     private final HorizonKKQuestPlus plugin;
     private final ConfigManager configManager;
     private final PlayerDataManager playerDataManager;
+    private final QuestDataManager questDataManager;
     private final QuestGenerator questGenerator;
     private final Random random = new Random();
 
@@ -33,11 +34,13 @@ public class QuestManager {
         this.plugin = plugin;
         this.configManager = configManager;
         this.playerDataManager = playerDataManager;
+        this.questDataManager = new QuestDataManager(plugin, configManager);
         this.questGenerator = new QuestGenerator(plugin, configManager);
     }
 
     public ConfigManager getConfigManager() { return configManager; }
     public PlayerDataManager getPlayerDataManager() { return playerDataManager; }
+    public QuestDataManager getQuestDataManager() { return questDataManager; }
 
     // ==================== 发布悬赏 ====================
 
@@ -779,7 +782,46 @@ public class QuestManager {
 
     public void reload() {
         configManager.loadConfigs();
+        loadFromDisk();
+    }
+
+    /**
+     * 从磁盘加载悬赏数据
+     */
+    public void loadFromDisk() {
         publicQuestPool.clear();
         allQuests.clear();
+
+        QuestDataManager.LoadedData data = questDataManager.loadAll();
+
+        // 加载公共悬赏池
+        publicQuestPool.addAll(data.publicQuestPool);
+
+        // 加载所有活跃任务
+        allQuests.putAll(data.allQuests);
+
+        // 加载动态任务模板
+        for (Map.Entry<String, QuestConfig> entry : data.dynamicTemplates.entrySet()) {
+            configManager.addQuestTemplate(entry.getKey(), entry.getValue());
+        }
+
+        plugin.getLogger().info("悬赏数据加载完成: "
+                + publicQuestPool.size() + " 个公共悬赏, "
+                + allQuests.size() + " 个活跃任务");
+    }
+
+    /**
+     * 保存悬赏数据到磁盘
+     */
+    public void saveToDisk() {
+        // 收集动态任务模板（以 RCL- 开头的）
+        Map<String, QuestConfig> dynamicTemplates = new LinkedHashMap<>();
+        for (Map.Entry<String, QuestConfig> entry : configManager.getQuestTemplates().entrySet()) {
+            if (entry.getKey().startsWith("RCL-")) {
+                dynamicTemplates.put(entry.getKey(), entry.getValue());
+            }
+        }
+
+        questDataManager.saveAll(publicQuestPool, allQuests, dynamicTemplates);
     }
 }
