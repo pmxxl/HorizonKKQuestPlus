@@ -4,6 +4,7 @@ import com.horizonkk.horizonKKQuestPlus.HorizonKKQuestPlus;
 import com.horizonkk.horizonKKQuestPlus.hook.NeigeitemsHook;
 import com.horizonkk.horizonKKQuestPlus.model.*;
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
@@ -267,7 +268,6 @@ public class QuestManager {
     /**
      * 根据任务等级获取灵石类型key
      *
-     * @param level 任务等级
      * @return 灵石类型key
      */
 
@@ -354,20 +354,33 @@ public class QuestManager {
                 // 计算押金灵石组合
                 Map<String, Integer> depositStoneMap = StoneConverter.calculateFeeStoneMap(rewardStoneMap, depositRate);
 
+                // 检查背包中是否有足够的灵石
+                Map<String, Integer> playerStoneMap = getPlayerStoneMap(player);
+                int playerTotalValue = StoneConverter.calculateTotalValue(playerStoneMap);
+
+                if (playerTotalValue < depositValue) {
+                    // 灵石不足，无法接取任务
+                    Map<String, Integer> depositDisplay = StoneConverter.convertFromLow(depositValue);
+                    player.sendMessage(colorize("&c灵石不足，无法接取任务!"));
+                    player.sendMessage(colorize("&7需要押金: " + formatStoneMap(depositDisplay)));
+                    player.sendMessage(colorize("&7当前拥有: &f" + playerTotalValue + " &7下品灵石价值"));
+                    return false;
+                }
+
+                // 扣除押金灵石
+                boolean deducted = deductStonesFromPlayer(player, depositStoneMap);
+                if (!deducted) {
+                    player.sendMessage(colorize("&c扣除押金失败!"));
+                    return false;
+                }
+
                 // 存储押金信息到任务实例
                 instance.setDepositStoneMap(depositStoneMap);
                 instance.setDepositValue(depositValue);
 
                 // 通知玩家押金扣除
                 Map<String, Integer> depositDisplay = StoneConverter.convertFromLow(depositValue);
-                StringBuilder depositMsg = new StringBuilder("&7接取押金: ");
-                boolean first = true;
-                for (Map.Entry<String, Integer> entry : depositDisplay.entrySet()) {
-                    if (!first) depositMsg.append("&7, ");
-                    depositMsg.append("&f").append(getStoneDisplayName(entry.getKey())).append(" &a×").append(entry.getValue());
-                    first = false;
-                }
-                player.sendMessage(colorize(depositMsg.toString()));
+                player.sendMessage(colorize("&7已扣除押金: " + formatStoneMap(depositDisplay)));
                 player.sendMessage(colorize("&7完成任务后押金将全额退还"));
             }
         }
@@ -530,6 +543,96 @@ public class QuestManager {
             return stoneItemId;
         }
         return stoneKey;
+    }
+
+    /**
+     * 获取玩家背包中的灵石组合
+     *
+     * @param player 玩家
+     * @return 灵石组合 {灵石key → 数量}
+     */
+    private Map<String, Integer> getPlayerStoneMap(Player player) {
+        Map<String, Integer> stoneMap = new LinkedHashMap<>();
+        Map<String, String> stoneTypes = configManager.getStoneTypes();
+
+        for (ItemStack item : player.getInventory().getContents()) {
+            if (item == null || item.getType() == Material.AIR) continue;
+
+            String itemId = NeigeitemsHook.getSafeItemId(item);
+            if (itemId == null) continue;
+
+            // 检查是否是灵石物品
+            for (Map.Entry<String, String> entry : stoneTypes.entrySet()) {
+                if (entry.getValue().equals(itemId)) {
+                    stoneMap.merge(entry.getKey(), item.getAmount(), Integer::sum);
+                    break;
+                }
+            }
+        }
+
+        return stoneMap;
+    }
+
+    /**
+     * 从玩家背包中扣除灵石
+     *
+     * @param player       玩家
+     * @param deductStoneMap 要扣除的灵石组合 {灵石key → 数量}
+     * @return 是否成功扣除
+     */
+    private boolean deductStonesFromPlayer(Player player, Map<String, Integer> deductStoneMap) {
+        Map<String, String> stoneTypes = configManager.getStoneTypes();
+
+        for (Map.Entry<String, Integer> entry : deductStoneMap.entrySet()) {
+            String stoneKey = entry.getKey();
+            int deductAmount = entry.getValue();
+
+            String stoneItemId = stoneTypes.get(stoneKey);
+            if (stoneItemId == null) continue;
+
+            int remaining = deductAmount;
+
+            // 遍历背包查找对应的灵石物品
+            for (int i = 0; i < player.getInventory().getSize() && remaining > 0; i++) {
+                ItemStack item = player.getInventory().getItem(i);
+                if (item == null || item.getType() == Material.AIR) continue;
+
+                String itemId = NeigeitemsHook.getSafeItemId(item);
+                if (!stoneItemId.equals(itemId)) continue;
+
+                int canDeduct = Math.min(item.getAmount(), remaining);
+                if (canDeduct >= item.getAmount()) {
+                    player.getInventory().setItem(i, null);
+                } else {
+                    item.setAmount(item.getAmount() - canDeduct);
+                }
+                remaining -= canDeduct;
+            }
+
+            // 如果还有剩余未扣除的，说明灵石不足
+            if (remaining > 0) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * 格式化灵石组合显示
+     *
+     * @param stoneMap 灵石组合 {灵石key → 数量}
+     * @return 格式化的字符串
+     */
+    private String formatStoneMap(Map<String, Integer> stoneMap) {
+        StringBuilder sb = new StringBuilder();
+        boolean first = true;
+        for (Map.Entry<String, Integer> entry : stoneMap.entrySet()) {
+            if (!first) sb.append("&7, ");
+            sb.append("&f").append(getStoneDisplayName(entry.getKey())).append(" &a×").append(entry.getValue());
+            first = false;
+        }
+        return sb.toString();
     }
 
     // ==================== 取消/过期 ====================

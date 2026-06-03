@@ -11,6 +11,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -140,7 +141,39 @@ public class IconBuilder {
         // 操作提示
         if (instance.getStatus() == QuestStatus.PUBLISHED) {
             lore.add("");
-            lore.add(colorize("&a▶ 左键接取此悬赏"));
+
+            // 计算并显示押金信息
+            if (configManager.isQuestDepositEnabled()) {
+                double depositRate = configManager.getQuestDepositRate();
+
+                // 获取奖励灵石列表
+                Map<String, Integer> rewardStoneMap = new LinkedHashMap<>();
+                for (RewardInfo reward : template.getRewards()) {
+                    if (reward.hasStone()) {
+                        rewardStoneMap.put(reward.getStoneKey(), reward.getStoneAmount());
+                    }
+                }
+
+                // 计算押金
+                int totalValue = StoneConverter.calculateTotalValue(rewardStoneMap);
+                int depositValue = StoneConverter.calculateFee(totalValue, depositRate);
+
+                if (depositValue > 0) {
+                    Map<String, Integer> depositDisplay = StoneConverter.convertFromLow(depositValue);
+                    StringBuilder depositStr = new StringBuilder();
+                    boolean first = true;
+                    for (Map.Entry<String, Integer> entry : depositDisplay.entrySet()) {
+                        if (!first) depositStr.append("&7+");
+                        depositStr.append("&f").append(getStoneDisplayName(entry.getKey(), configManager)).append("×").append(entry.getValue());
+                        first = false;
+                    }
+                    lore.add(colorize("&a▶ 左键接取此悬赏 &7(押金: " + depositStr.toString() + "&7)"));
+                } else {
+                    lore.add(colorize("&a▶ 左键接取此悬赏"));
+                }
+            } else {
+                lore.add(colorize("&a▶ 左键接取此悬赏"));
+            }
         }
 
         return NeigeitemsHook.buildCustomItem(itemConfig.getCustomModel(), name, lore);
@@ -253,6 +286,21 @@ public class IconBuilder {
             return item.getItemMeta().getDisplayName();
         }
         return itemId;
+    }
+
+    /**
+     * 获取灵石的显示名称
+     */
+    private static String getStoneDisplayName(String stoneKey, ConfigManager configManager) {
+        String stoneItemId = configManager.getStoneTypes().get(stoneKey);
+        if (stoneItemId != null) {
+            ItemStack item = NeigeitemsHook.getItemStack(stoneItemId, null);
+            if (item != null && item.hasItemMeta() && item.getItemMeta().hasDisplayName()) {
+                return item.getItemMeta().getDisplayName();
+            }
+            return stoneItemId;
+        }
+        return stoneKey;
     }
 
     /**
