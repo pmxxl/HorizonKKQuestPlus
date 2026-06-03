@@ -11,44 +11,44 @@ stone_types:
 quests:
 
   # ========== 收集类 ==========
-  收集赤铜:
-    type: collect                # 任务类型: collect(收集) / hunt(猎杀) / explore(探索) / escort(护送)
-    level: rlp                   # 悬赏等级: rlp(人级) / xlp(玄级) / dlp(地级) / tlp(天级)
-    target: "赤铜"               # 目标: 物品ID
-    target_amount: 10            # 需求数量
-    rewards:
-      - "xpls:100"               # 灵石奖励: 100下品灵石
-      - "item:赤铜:5"            # 物品奖励: 5个赤铜
-    time_limit: 3                # 时间限制(游戏天数), 0=无限制
-    description: "&f收集 &a10 &f个赤铜矿石"
-    repeatable: true
-    messages:
-      accepted: "&a成功接取悬赏 &f%quest% &a! 收集10个赤铜即可完成"
-      completed: "&a悬赏完成! 收集了10个赤铜, 奖励已发放!"
-      not_enough_materials: "&c材料不足!"
-
-  收集玄铁:
-    type: collect
-    level: xlp
-    target: "玄铁"
-    target_amount: 5
-    rewards:
-      - "zpls:2"
-    time_limit: 5
-    description: "&f收集 &a5 &f个玄铁"
-    repeatable: true
-
-  采集魔法石:
-    type: collect
-    level: dlp
-    target: "魔法石"
-    target_amount: 3
-    rewards:
-      - "zpls:10"
-      - "item:魔法石:1"
-    time_limit: 7
-    description: "&f收集 &a3 &f个魔法石"
-    repeatable: false
+#  收集赤铜:
+#    type: collect                # 任务类型: collect(收集) / hunt(猎杀) / explore(探索) / escort(护送)
+#    level: rlp                   # 悬赏等级: rlp(人级) / xlp(玄级) / dlp(地级) / tlp(天级)
+#    target: "赤铜"               # 目标: 物品ID
+#    target_amount: 10            # 需求数量
+#    rewards:
+#      - "xpls:100"               # 灵石奖励: 100下品灵石
+#      - "item:赤铜:5"            # 物品奖励: 5个赤铜
+#    time_limit: 3                # 时间限制(游戏天数), 0=无限制
+#    description: "&f收集 &a10 &f个赤铜矿石"
+#    repeatable: true
+#    messages:
+#      accepted: "&a成功接取悬赏 &f%quest% &a! 收集10个赤铜即可完成"
+#      completed: "&a悬赏完成! 收集了10个赤铜, 奖励已发放!"
+#      not_enough_materials: "&c材料不足!"
+#
+#  收集玄铁:
+#    type: collect
+#    level: xlp
+#    target: "玄铁"
+#    target_amount: 5
+#    rewards:
+#      - "zpls:2"
+#    time_limit: 5
+#    description: "&f收集 &a5 &f个玄铁"
+#    repeatable: true
+#
+#  采集魔法石:
+#    type: collect
+#    level: dlp
+#    target: "魔法石"
+#    target_amount: 3
+#    rewards:
+#      - "zpls:10"
+#      - "item:魔法石:1"
+#    time_limit: 7
+#    description: "&f收集 &a3 &f个魔法石"
+#    repeatable: false
 
   # ========== 猎杀类 ==========
   猎杀僵尸:
@@ -57,7 +57,7 @@ quests:
     target: "ZOMBIE"             # 生物类型 (EntityType 名称)
     target_amount: 20
     rewards:
-      - "xpls:50"
+      - "xpls:20"
     time_limit: 1
     description: "&f猎杀 &a20 &f只僵尸"
     repeatable: true
@@ -71,8 +71,7 @@ quests:
     target: "SKELETON"
     target_amount: 15
     rewards:
-      - "xpls:60"
-      - "item:妖兽骨:3"
+      - "xpls:20"
     time_limit: 2
     description: "&f猎杀 &a15 &f只骷髅"
     repeatable: true
@@ -83,10 +82,143 @@ quests:
     target: "ENDERMAN"
     target_amount: 5
     rewards:
-      - "zpls:5"
-      - "cmd:say %player% 完成了猎杀末影人悬赏!|console"
+      - "xpls:20"
+#      - "cmd:say %player% 完成了猎杀末影人悬赏!|console"
     time_limit: 3600
     description: "&f猎杀 &a5 &f只末影人"
+    repeatable: true
+
+  猎杀蜘蛛:
+    type: hunt
+    level: rlp
+    target: "SPIDER"
+    target_amount: 15
+    rewards:
+      - "xpls:20"
+    time_limit: 1
+    description: "&f猎杀 &a15 &f只蜘蛛"
+    repeatable: true
+
+  猎杀洞穴蜘蛛:
+    type: hunt
+    level: rlp
+    target: "CAVE_SPIDER"
+    target_amount: 10
+    rewards:
+      - "xpls:20"
+    time_limit: 1
+    description: "&f猎杀 &a10 &f只洞穴蜘蛛"
+    repeatable: true
+
+  猎杀苦力怕:
+    type: hunt
+    level: xlp
+    target: "CREEPER"
+    target_amount: 10
+    rewards:
+      - "xpls:25"
+    time_limit: 2
+    description: "&f猎杀 &a10 &f只苦力怕"
+    repeatable: true
+
+  猎杀女巫:
+    type: hunt
+    level: xlp
+    target: "WITCH"
+    target_amount: 5
+    rewards:
+      - "xpls:30"
+    time_limit: 2
+    description: "&f猎杀 &a5 &f只女巫"
+    repeatable: true
+
+  猎杀烈焰人:
+    type: hunt
+    level: dlp
+    target: "BLAZE"
+    target_amount: 10
+    rewards:
+      - "xpls:30"
+    time_limit: 3
+    description: "&f猎杀 &a10 &f只烈焰人"
+    repeatable: true
+
+  猎杀凋零骷髅:
+    type: hunt
+    level: dlp
+    target: "WITHER_SKELETON"
+    target_amount: 10
+    rewards:
+      - "xpls:50"
+    time_limit: 3
+    description: "&f猎杀 &a10 &f只凋零骷髅"
+    repeatable: true
+
+  猎杀守卫者:
+    type: hunt
+    level: xlp
+    target: "GUARDIAN"
+    target_amount: 6
+    rewards:
+      - "xpls:30"
+    time_limit: 2
+    description: "&f猎杀 &a6 &f只守卫者"
+    repeatable: true
+
+  猎杀远古守卫者:
+    type: hunt
+    level: tlp
+    target: "ELDER_GUARDIAN"
+    target_amount: 1
+    rewards:
+      - "xpls:60"
+#      - "cmd:give %player% prismarine_shard 5|console"
+    time_limit: 4
+    description: "&f猎杀 &a1 &f只远古守卫者"
+    repeatable: false
+
+  猎杀劫掠兽:
+    type: hunt
+    level: dlp
+    target: "RAVAGER"
+    target_amount: 3
+    rewards:
+      - "xpls:30"
+    time_limit: 3
+    description: "&f猎杀 &a3 &f只劫掠兽"
+    repeatable: true
+
+  猎杀幻翼:
+    type: hunt
+    level: xlp
+    target: "PHANTOM"
+    target_amount: 10
+    rewards:
+      - "xpls:25"
+    time_limit: 2
+    description: "&f猎杀 &a10 &f只幻翼"
+    repeatable: true
+
+  猎杀尸壳:
+    type: hunt
+    level: rlp
+    target: "HUSK"
+    target_amount: 12
+    rewards:
+      - "xpls:18"
+    time_limit: 1
+    description: "&f猎杀 &a12 &f只尸壳"
+    repeatable: true
+
+  猎杀流浪者:
+    type: hunt
+    level: rlp
+    target: "STRAY"
+    target_amount: 10
+    rewards:
+      - "xpls:18"
+    time_limit: 1
+    description: "&f猎杀 &a10 &f只流浪者"
     repeatable: true
 
   # ========== 探索类 ==========

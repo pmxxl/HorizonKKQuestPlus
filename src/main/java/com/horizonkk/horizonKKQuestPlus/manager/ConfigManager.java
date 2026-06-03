@@ -258,8 +258,35 @@ public class ConfigManager {
         for (QuestLevel level : QuestLevel.values()) {
             String levelKey = level.getConfigKey(); // 使用 configKey (rlp/xlp/dlp/tlp)
 
-            // 直接获取该等级对应的列表
-            List<?> templateList = templatesSec.getList(levelKey);
+            // 获取该等级的配置节
+            ConfigurationSection levelSec = templatesSec.getConfigurationSection(levelKey);
+            if (levelSec == null) {
+                continue;
+            }
+
+            // 获取模板池的默认过期时间范围
+            int defaultMinExpire = 7;  // 默认最小7天
+            int defaultMaxExpire = 7;  // 默认最大7天
+            ConfigurationSection expireSec = levelSec.getConfigurationSection("expire");
+            if (expireSec != null) {
+                Object minObj = expireSec.get("min");
+                Object maxObj = expireSec.get("max");
+                if (minObj != null) {
+                    defaultMinExpire = parseExpireDays(minObj);
+                }
+                if (maxObj != null) {
+                    defaultMaxExpire = parseExpireDays(maxObj);
+                }
+                // 确保 min <= max
+                if (defaultMinExpire > defaultMaxExpire) {
+                    int temp = defaultMinExpire;
+                    defaultMinExpire = defaultMaxExpire;
+                    defaultMaxExpire = temp;
+                }
+            }
+
+            // 获取模板列表
+            List<?> templateList = levelSec.getList("templates");
             if (templateList == null || templateList.isEmpty()) {
                 continue;
             }
@@ -268,7 +295,8 @@ public class ConfigManager {
             for (Object item : templateList) {
                 if (item instanceof Map) {
                     try {
-                        QuestTemplate template = parseQuestTemplate(level, (Map<String, Object>) item);
+                        QuestTemplate template = parseQuestTemplate(level, (Map<String, Object>) item,
+                                                                     defaultMinExpire, defaultMaxExpire);
                         if (template != null) {
                             templates.add(template);
                         }
@@ -279,14 +307,21 @@ public class ConfigManager {
             }
 
             questTemplatesByLevel.put(level, templates);
-            plugin.getLogger().info("加载 " + level.getDisplayName() + " 模板: " + templates.size() + " 个");
+            plugin.getLogger().info("加载 " + level.getDisplayName() + " 模板: " + templates.size() + " 个"
+                    + " (过期时间: " + defaultMinExpire + "-" + defaultMaxExpire + "天)");
         }
     }
 
     /**
      * 解析单个任务模板
+     *
+     * @param level           任务等级
+     * @param map             模板配置
+     * @param defaultMinExpire 默认最小过期时间
+     * @param defaultMaxExpire 默认最大过期时间
      */
-    private QuestTemplate parseQuestTemplate(QuestLevel level, Map<String, Object> map) {
+    private QuestTemplate parseQuestTemplate(QuestLevel level, Map<String, Object> map,
+                                              int defaultMinExpire, int defaultMaxExpire) {
         String templateId = (String) map.get("id");
         if (templateId == null || templateId.isEmpty()) {
             return null;
@@ -320,7 +355,83 @@ public class ConfigManager {
             }
         }
 
-        return new QuestTemplate(templateId, level, itemRanges, minValue, maxValue);
+        // 解析过期时间（优先使用单个模板的配置，否则使用模板池默认值）
+        int minExpireDays = defaultMinExpire;
+        int maxExpireDays = defaultMaxExpire;
+
+        Object expireObj = map.get("expire");
+        if (expireObj != null) {
+            // 单个模板定义了过期时间
+            int expireDays = parseExpireDays(expireObj);
+            minExpireDays = expireDays;
+            maxExpireDays = expireDays;
+        } else {
+            // 兼容旧格式 expire_days
+            expireObj = map.get("expire_days");
+            if (expireObj instanceof Number) {
+                int expireDays = ((Number) expireObj).intValue();
+                minExpireDays = expireDays;
+                maxExpireDays = expireDays;
+            }
+        }
+
+        return new QuestTemplate(templateId, level, itemRanges, minValue, maxValue, minExpireDays, maxExpireDays);
+    }
+
+    /**
+     * 解析过期时间配置
+     * 支持格式:
+     * - 数字: 直接表示天数，如 7
+     * - "Xd": X天，如 "7d"
+     * - "Xm": X个月（每月30天），如 "1m" = 30天
+     * - "Xy": X年（每年365天），如 "1y" = 365天
+     * - "永久": 永不过期，返回 0
+     *
+     * @param obj 配置值
+     * @return 过期天数（0表示永不过期）
+     */
+    private int parseExpireDays(Object obj) {
+        if (obj instanceof Number) {
+            return ((Number) obj).intValue();
+        }
+
+        if (obj instanceof String) {
+            String str = ((String) obj).trim().toLowerCase();
+
+            // 永不过期
+            if (str.equals("永久") || str.equals("permanent") || str.equals("0")) {
+                return 0;
+            }
+
+            // 解析数字+单位格式
+            if (str.endsWith("d")) {
+                try {
+                    return Integer.parseInt(str.substring(0, str.length() - 1));
+                } catch (NumberFormatException ignored) {}
+            }
+
+            if (str.endsWith("m")) {
+                try {
+                    int months = Integer.parseInt(str.substring(0, str.length() - 1));
+                    return months * 30;  // 每月30天
+                } catch (NumberFormatException ignored) {}
+            }
+
+            if (str.endsWith("y")) {
+                try {
+                    int years = Integer.parseInt(str.substring(0, str.length() - 1));
+                    return years * 365;  // 每年365天
+                } catch (NumberFormatException ignored) {}
+            }
+
+            // 尝试直接解析为数字
+            try {
+                return Integer.parseInt(str);
+            } catch (NumberFormatException ignored) {}
+        }
+
+        // 默认7天
+        return 7;
     }
 
     /**

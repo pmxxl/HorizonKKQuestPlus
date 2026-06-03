@@ -153,7 +153,7 @@ public class QuestManager {
             }
 
             // 创建任务实例
-            QuestInstance instance = generateRandomCollectQuest(requirement);
+            QuestInstance instance = generateRandomCollectQuest(requirement, template);
             if (instance != null) {
                 newQuests.add(instance);
             }
@@ -166,9 +166,10 @@ public class QuestManager {
      * 生成单个随机收集任务 (基于任务需求)
      *
      * @param requirement 任务需求
+     * @param template    任务模板
      * @return 生成的任务实例
      */
-    private QuestInstance generateRandomCollectQuest(QuestRequirement requirement) {
+    private QuestInstance generateRandomCollectQuest(QuestRequirement requirement, QuestTemplate template) {
         // 计算奖励 (总价值 × 系数1.0，以灵石为单位)
         int rewardAmount = requirement.getTotalValue();
 
@@ -201,6 +202,9 @@ public class QuestManager {
         // 构建目标字符串 (多个物品用逗号分隔)
         String target = buildTargetString(requirement);
 
+        // 获取随机过期时间
+        int expireDays = template.getRandomExpireDays();
+
         // 创建任务配置
         QuestConfig questConfig = new QuestConfig(
                 questId,
@@ -209,7 +213,7 @@ public class QuestManager {
                 target,
                 1, // 目标数量设为1，实际需求在 description 中说明
                 rewards,
-                7, // 7天时间限制
+                expireDays,
                 description,
                 descriptionLines, // 多行描述
                 true, // 可重复
@@ -218,12 +222,12 @@ public class QuestManager {
 
         // 将任务配置存储到 configManager 中，以便后续查找
         configManager.addQuestTemplate(questId, questConfig);
-        plugin.getLogger().info("[DEBUG] 已存储随机收集任务模板: " + questId);
+        plugin.getLogger().info("[DEBUG] 已存储随机收集任务模板: " + questId + " (过期: " + expireDays + "天)");
 
         // 创建任务实例
         QuestInstance instance = new QuestInstance(questId, questId, "系统悬赏",
                 null, true, true);
-        instance.setExpireInDays(7);
+        instance.setExpireInDays(expireDays);
 
         // 存储任务配置和实例
         allQuests.put(questId, instance);

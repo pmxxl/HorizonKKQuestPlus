@@ -104,7 +104,7 @@ random_collect:
   # 等级权重 (控制各等级出现概率)
   level_weights:
     rlp: 40              # 人级权重
-    xlp: 30            # 玄级权重
+    xlp: 0            # 玄级权重
     dlp: 0              # 地级权重
     tlp: 0                # 天级权重
 
@@ -192,50 +192,67 @@ collect_items:
 
 # ==================== 等级模板库 ====================
 # 每个等级定义多个模板，系统随机选取模板生成任务
-# 模板配置格式:
-#   - id: "模板ID"
-#     items:
-#       物品ID: {min: 最小数量, max: 最大数量}
-#     value_range: [最小价值, 最大价值]
+# 模板池配置格式:
+#   等级key:
+#     expire:              # 该模板池的默认过期时间范围
+#       min: "3d"          # 最小过期时间
+#       max: "7d"          # 最大过期时间
+#     templates:           # 模板列表
+#       - id: "模板ID"
+#         items:
+#           物品ID: {min: 最小数量, max: 最大数量}
+#         value_range: [最小价值, 最大价值]
+#         expire: "7d"     # 可选，覆盖模板池默认值（固定值）
+#
+# 过期时间格式: 数字=天数, "7d"=7天, "1m"=30天, "1y"=365天, "永久"=永不过期
 quest_templates:
   # ========== 人级模板池 (价值 10-299) ==========
   rlp:
-    - id: "rlp_ore_01"
-      items:
-        赤铜: {min: 3, max: 8}
-        精铁: {min: 2, max: 5}
-      value_range: [10, 299]
+    expire:
+      min: "5y"
+      max: "10y"
+    templates:
+      - id: "rlp_ore_01"
+        items:
+          赤铜: {min: 3, max: 8}
+          精铁: {min: 2, max: 5}
+        value_range: [10, 299]
 
-    - id: "rlp_ore_02"
-      items:
-        剑痕石: {min: 5, max: 12}
-        玄阳石: {min: 2, max: 4}
-      value_range: [10, 299]
+      - id: "rlp_ore_02"
+        items:
+          剑痕石: {min: 5, max: 12}
+          玄阳石: {min: 2, max: 4}
+        value_range: [10, 299]
 
-    - id: "rlp_herb_01"
-      items:
-        白藏土: {min: 3, max: 6}
-      value_range: [10, 299]
+      - id: "rlp_herb_01"
+        items:
+          白藏土: {min: 3, max: 6}
+        value_range: [10, 299]
 
-    - id: "rlp_gem_01"
-      items:
-        青玉: {min: 3, max: 7}
-        寒冰石: {min: 2, max: 5}
-      value_range: [10, 299]
+      - id: "rlp_gem_01"
+        items:
+          青玉: {min: 3, max: 7}
+          寒冰石: {min: 2, max: 5}
+        value_range: [10, 299]
 
   # ========== 玄级模板池 (价值 300-2048) ==========
   xlp:
-    - id: "xlp_metal_01"
-      items:
-        玄铁: {min: 3, max: 6}
-      value_range: [300, 2048]
+    expire:
+      min: "5y"
+      max: "10y"
+    templates:
+      - id: "xlp_metal_01"
+        items:
+          玄铁: {min: 3, max: 6}
+        value_range: [300, 2048]
 
-    - id: "xlp_mixed_01"
-      items:
-        玄铁: {min: 4, max: 8}
-        风灵石: {min: 3, max: 6}
-        雷灵石: {min: 2, max: 4}
-      value_range: [300, 2048]
+      - id: "xlp_mixed_01"
+        items:
+          玄铁: {min: 4, max: 8}
+          风灵石: {min: 3, max: 6}
+          雷灵石: {min: 2, max: 4}
+        value_range: [300, 2048]
+#        expire: "1m"  # 单独定义：1个月
 
   # # ========== 地级模板池 (价值 200-499) ==========
   # dlp:

@@ -16,15 +16,31 @@ public class QuestTemplate {
     private final Map<String, ItemRange> itemRanges;    // 物品及数量范围 {物品ID → 数量范围}
     private final int minValue;                         // 最小目标价值
     private final int maxValue;                         // 最大目标价值
+    private final int minExpireDays;                    // 最小过期时间（游戏天数）
+    private final int maxExpireDays;                    // 最大过期时间（游戏天数）
 
     public QuestTemplate(String templateId, QuestLevel level,
                          Map<String, ItemRange> itemRanges,
                          int minValue, int maxValue) {
+        this(templateId, level, itemRanges, minValue, maxValue, 7, 7);
+    }
+
+    public QuestTemplate(String templateId, QuestLevel level,
+                         Map<String, ItemRange> itemRanges,
+                         int minValue, int maxValue, int expireDays) {
+        this(templateId, level, itemRanges, minValue, maxValue, expireDays, expireDays);
+    }
+
+    public QuestTemplate(String templateId, QuestLevel level,
+                         Map<String, ItemRange> itemRanges,
+                         int minValue, int maxValue, int minExpireDays, int maxExpireDays) {
         this.templateId = templateId;
         this.level = level;
         this.itemRanges = itemRanges;
         this.minValue = minValue;
         this.maxValue = maxValue;
+        this.minExpireDays = minExpireDays;
+        this.maxExpireDays = maxExpireDays;
     }
 
     public String getTemplateId() {
@@ -45,6 +61,25 @@ public class QuestTemplate {
 
     public int getMaxValue() {
         return maxValue;
+    }
+
+    public int getMinExpireDays() {
+        return minExpireDays;
+    }
+
+    public int getMaxExpireDays() {
+        return maxExpireDays;
+    }
+
+    /**
+     * 获取随机过期时间
+     * @return 在 [minExpireDays, maxExpireDays] 范围内的随机天数
+     */
+    public int getRandomExpireDays() {
+        if (minExpireDays >= maxExpireDays) {
+            return minExpireDays;
+        }
+        return minExpireDays + (int) (Math.random() * (maxExpireDays - minExpireDays + 1));
     }
 
     /**
