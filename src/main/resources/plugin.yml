@@ -4,7 +4,7 @@ main: com.horizonkk.horizonKKQuestPlus.HorizonKKQuestPlus
 api-version: '1.21'
 authors: [ HorizonKK ]
 description: 高度定制化的随机任务悬赏系统
-softdepend: [ NeigeItems, TYLcalendarPlus ]
+softdepend: [ NeigeItems, TYLcalendarPlus, HorizonKKShopPlus ]
 
 commands:
   horizonquest:

@@ -1,41 +1,29 @@
 package com.horizonkk.horizonKKQuestPlus.hook;
 
+import com.horizonkk.horizonKKShopPlus.api.HorizonKKShopAPI;
 import org.bukkit.Bukkit;
 
-import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
 /**
  * HorizonKKShopPlus 插件钩子类
- * 通过 Bukkit ServiceManager 获取 API 实例，再以反射调用各方法
+ * 通过 Bukkit ServiceManager 获取 API 实例，直接调用 API 方法
  */
 public class HorizonKKShopHook {
 
-    private static Object apiInstance;
-    private static Class<?> apiClass;
+    private static HorizonKKShopAPI apiInstance;
     private static boolean isAvailable = false;
 
     static {
-        try {
-            apiClass = Class.forName("com.horizonkk.horizonKKShopPlus.api.HorizonKKShopAPI");
-            // 通过 Bukkit ServiceManager 获取已注册的 API 实例
-            Method loadMethod = Bukkit.getServicesManager().getClass()
-                    .getMethod("load", Class.class);
-            apiInstance = loadMethod.invoke(Bukkit.getServicesManager(), apiClass);
-            isAvailable = apiInstance != null;
-        } catch (Exception e) {
-            isAvailable = false;
-        }
+        reload();
     }
 
     /** 重新加载 API 实例（插件重载后调用） */
     public static void reload() {
         try {
-            Method loadMethod = Bukkit.getServicesManager().getClass()
-                    .getMethod("load", Class.class);
-            apiInstance = loadMethod.invoke(Bukkit.getServicesManager(), apiClass);
+            apiInstance = Bukkit.getServicesManager().load(HorizonKKShopAPI.class);
             isAvailable = apiInstance != null;
         } catch (Exception e) {
             isAvailable = false;
@@ -57,12 +45,7 @@ public class HorizonKKShopHook {
      */
     public static int addStock(String shopName, String itemId, int amount) {
         if (!isAvailable()) return -1;
-        try {
-            Method method = apiClass.getMethod("addStock", String.class, String.class, int.class);
-            return (int) method.invoke(apiInstance, shopName, itemId, amount);
-        } catch (Exception ignored) {
-            return -1;
-        }
+        return apiInstance.addStock(shopName, itemId, amount);
     }
 
     /**
@@ -74,12 +57,7 @@ public class HorizonKKShopHook {
      */
     public static int addStock(String shopName, int slot, int amount) {
         if (!isAvailable()) return -1;
-        try {
-            Method method = apiClass.getMethod("addStock", String.class, int.class, int.class);
-            return (int) method.invoke(apiInstance, shopName, slot, amount);
-        } catch (Exception ignored) {
-            return -1;
-        }
+        return apiInstance.addStock(shopName, slot, amount);
     }
 
     /**
@@ -90,12 +68,7 @@ public class HorizonKKShopHook {
      */
     public static int getStock(String shopName, String itemId) {
         if (!isAvailable()) return -1;
-        try {
-            Method method = apiClass.getMethod("getStock", String.class, String.class);
-            return (int) method.invoke(apiInstance, shopName, itemId);
-        } catch (Exception ignored) {
-            return -1;
-        }
+        return apiInstance.getStock(shopName, itemId);
     }
 
     /**
@@ -106,12 +79,7 @@ public class HorizonKKShopHook {
      */
     public static int getStock(String shopName, int slot) {
         if (!isAvailable()) return -1;
-        try {
-            Method method = apiClass.getMethod("getStock", String.class, int.class);
-            return (int) method.invoke(apiInstance, shopName, slot);
-        } catch (Exception ignored) {
-            return -1;
-        }
+        return apiInstance.getStock(shopName, slot);
     }
 
     /**
@@ -123,12 +91,7 @@ public class HorizonKKShopHook {
      */
     public static int setStock(String shopName, String itemId, int amount) {
         if (!isAvailable()) return -1;
-        try {
-            Method method = apiClass.getMethod("setStock", String.class, String.class, int.class);
-            return (int) method.invoke(apiInstance, shopName, itemId, amount);
-        } catch (Exception ignored) {
-            return -1;
-        }
+        return apiInstance.setStock(shopName, itemId, amount);
     }
 
     /**
@@ -140,12 +103,7 @@ public class HorizonKKShopHook {
      */
     public static int setStock(String shopName, int slot, int amount) {
         if (!isAvailable()) return -1;
-        try {
-            Method method = apiClass.getMethod("setStock", String.class, int.class, int.class);
-            return (int) method.invoke(apiInstance, shopName, slot, amount);
-        } catch (Exception ignored) {
-            return -1;
-        }
+        return apiInstance.setStock(shopName, slot, amount);
     }
 
     /**
@@ -155,11 +113,7 @@ public class HorizonKKShopHook {
      */
     public static void resetStock(String shopName, String itemId) {
         if (!isAvailable()) return;
-        try {
-            Method method = apiClass.getMethod("resetStock", String.class, String.class);
-            method.invoke(apiInstance, shopName, itemId);
-        } catch (Exception ignored) {
-        }
+        apiInstance.resetStock(shopName, itemId);
     }
 
     /**
@@ -167,15 +121,9 @@ public class HorizonKKShopHook {
      * @param shopName 商店名
      * @return 槽位号 -> 当前存量的映射，空Map表示商店不存在或未开启存量
      */
-    @SuppressWarnings("unchecked")
     public static Map<Integer, Integer> getShopStocks(String shopName) {
         if (!isAvailable()) return Collections.emptyMap();
-        try {
-            Method method = apiClass.getMethod("getShopStocks", String.class);
-            return (Map<Integer, Integer>) method.invoke(apiInstance, shopName);
-        } catch (Exception ignored) {
-            return Collections.emptyMap();
-        }
+        return apiInstance.getShopStocks(shopName);
     }
 
     // ==================== 商店信息查询 ====================
@@ -184,15 +132,9 @@ public class HorizonKKShopHook {
      * 获取所有已注册的商店名
      * @return 商店名集合
      */
-    @SuppressWarnings("unchecked")
     public static Set<String> getAllShopNames() {
         if (!isAvailable()) return Collections.emptySet();
-        try {
-            Method method = apiClass.getMethod("getAllShopNames");
-            return (Set<String>) method.invoke(apiInstance);
-        } catch (Exception ignored) {
-            return Collections.emptySet();
-        }
+        return apiInstance.getAllShopNames();
     }
 
     /**
@@ -202,12 +144,7 @@ public class HorizonKKShopHook {
      */
     public static boolean shopExists(String shopName) {
         if (!isAvailable()) return false;
-        try {
-            Method method = apiClass.getMethod("shopExists", String.class);
-            return (boolean) method.invoke(apiInstance, shopName);
-        } catch (Exception ignored) {
-            return false;
-        }
+        return apiInstance.shopExists(shopName);
     }
 
     /**
@@ -217,12 +154,7 @@ public class HorizonKKShopHook {
      */
     public static boolean isStockEnabled(String shopName) {
         if (!isAvailable()) return false;
-        try {
-            Method method = apiClass.getMethod("isStockEnabled", String.class);
-            return (boolean) method.invoke(apiInstance, shopName);
-        } catch (Exception ignored) {
-            return false;
-        }
+        return apiInstance.isStockEnabled(shopName);
     }
 
     /**
@@ -230,10 +162,6 @@ public class HorizonKKShopHook {
      */
     public static void saveStockData() {
         if (!isAvailable()) return;
-        try {
-            Method method = apiClass.getMethod("saveStockData");
-            method.invoke(apiInstance);
-        } catch (Exception ignored) {
-        }
+        apiInstance.saveStockData();
     }
 }
