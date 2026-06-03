@@ -5,6 +5,7 @@ import com.horizonkk.horizonKKQuestPlus.gui.QuestListGUI;
 import com.horizonkk.horizonKKQuestPlus.gui.QuestListHolder;
 import com.horizonkk.horizonKKQuestPlus.gui.QuestSubmitGUI;
 import com.horizonkk.horizonKKQuestPlus.gui.QuestSubmitHolder;
+import com.horizonkk.horizonKKQuestPlus.hook.HorizonKKShopHook;
 import com.horizonkk.horizonKKQuestPlus.hook.NeigeitemsHook;
 import com.horizonkk.horizonKKQuestPlus.manager.ConfigManager;
 import com.horizonkk.horizonKKQuestPlus.manager.QuestManager;
@@ -216,6 +217,22 @@ public class QuestSubmitListener implements Listener {
 
         // 发放奖励
         questManager.giveRewards(player, holder.getQuestConfig().getRewards());
+
+        // 随机收集任务完成后，将提交的物品存入商店存量
+        if (instance.getTemplateId().startsWith("RCL-") && HorizonKKShopHook.isAvailable()) {
+            String shopName = "玄岛矿石出售";
+            Map<String, Integer> requiredItems = holder.getRequiredItems();
+            for (Map.Entry<String, Integer> entry : requiredItems.entrySet()) {
+                String itemId = entry.getKey();
+                int amount = entry.getValue();
+                int result = HorizonKKShopHook.addStock(shopName, itemId, amount);
+                if (result >= 0) {
+                    plugin.getLogger().info("[商店存量] 玩家 " + player.getName()
+                            + " 完成随机收集任务，已向商店 [" + shopName
+                            + "] 存入 " + itemId + " x" + amount);
+                }
+            }
+        }
 
         // 发送消息
         player.sendMessage(colorize("&a&l任务完成!"));
