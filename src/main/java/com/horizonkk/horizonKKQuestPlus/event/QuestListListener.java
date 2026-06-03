@@ -2,6 +2,7 @@ package com.horizonkk.horizonKKQuestPlus.event;
 
 import com.horizonkk.horizonKKQuestPlus.HorizonKKQuestPlus;
 import com.horizonkk.horizonKKQuestPlus.gui.*;
+import com.horizonkk.horizonKKQuestPlus.hook.HorizonKKShopHook;
 import com.horizonkk.horizonKKQuestPlus.hook.NeigeitemsHook;
 import com.horizonkk.horizonKKQuestPlus.manager.ConfigManager;
 import com.horizonkk.horizonKKQuestPlus.manager.QuestManager;
@@ -92,7 +93,7 @@ public class QuestListListener implements Listener {
                 }
                 break;
             case ACCEPTED:
-                // 检查任务是否已完成
+                // 检查任务是否已完成或过期
                 if (instance.getStatus() == QuestStatus.COMPLETED) {
                     player.sendMessage(colorize("&e该任务已完成!"));
                     return;
@@ -102,16 +103,18 @@ public class QuestListListener implements Listener {
                     return;
                 }
 
-                // 检查任务类型
-                QuestConfig template = configManager.getQuestTemplate(instance.getTemplateId());
-                if (template != null && template.getType() == QuestType.COLLECT) {
-                    // 收集类任务 - 直接检查并提交
-                    handleCollectQuestSubmit(player, instance, template, gui);
-                } else {
-                    // 其他类型任务 - 显示进度
-                    player.sendMessage(colorize("&7悬赏 &f" + instance.getQuestId()
-                            + " &7进度: &f" + instance.getProgress() + "&7/&f"
-                            + (template != null ? template.getTargetAmount() : "?")));
+                // 左键 = 提交任务, 右键 = 放弃任务
+                if (event.isLeftClick()) {
+                    QuestConfig template = configManager.getQuestTemplate(instance.getTemplateId());
+                    if (template != null && template.getType() == QuestType.COLLECT) {
+                        handleCollectQuestSubmit(player, instance, template, gui);
+                    } else {
+                        player.sendMessage(colorize("&7悬赏 &f" + instance.getQuestId()
+                                + " &7进度: &f" + instance.getProgress() + "&7/&f"
+                                + (template != null ? template.getTargetAmount() : "?")));
+                    }
+                } else if (event.isRightClick()) {
+                    handleAbandonQuest(player, instance, gui);
                 }
                 break;
             case MY_PUBLISHED:
@@ -121,6 +124,55 @@ public class QuestListListener implements Listener {
                 }
                 break;
         }
+    }
+
+    /**
+     * 处理放弃任务
+     */
+    private void handleAbandonQuest(Player player, QuestInstance instance, QuestListGUI gui) {
+        // 标记任务为已取消
+        instance.setStatus(QuestStatus.CANCELLED);
+
+        // 从玩家已接取列表中移除
+        questManager.getPlayerDataManager().removeAcceptedQuest(player.getUniqueId(), instance.getQuestId());
+
+        // 返还押金
+        if (instance.hasDeposit()) {
+            List<RewardInfo> depositRewards = new ArrayList<>();
+            for (Map.Entry<String, Integer> entry : instance.getDepositStoneMap().entrySet()) {
+                depositRewards.add(new RewardInfo(entry.getKey(), entry.getValue(), null, 0, null));
+            }
+            questManager.giveRewards(player, depositRewards);
+
+            StringBuilder depositMsg = new StringBuilder("&7押金已退还: ");
+            boolean first = true;
+            for (Map.Entry<String, Integer> entry : instance.getDepositStoneMap().entrySet()) {
+                if (!first) depositMsg.append("&7, ");
+                depositMsg.append("&f").append(getStoneDisplayName(entry.getKey())).append(" &a×").append(entry.getValue());
+                first = false;
+            }
+            player.sendMessage(colorize(depositMsg.toString()));
+        }
+
+        player.sendMessage(colorize("&c已放弃悬赏 &f" + instance.getQuestId()));
+
+        // 通知发布人，悬赏重新上架
+        if (instance.getPublisherUuid() != null) {
+            Player publisher = Bukkit.getPlayer(instance.getPublisherUuid());
+            if (publisher != null && publisher.isOnline()) {
+                publisher.sendMessage(colorize("&e你发布的悬赏 &f" + instance.getQuestId()
+                        + " &e已被 &f" + player.getName() + " &e放弃，悬赏已重新上架"));
+            }
+        }
+
+        // 将任务重新放回公共悬赏池
+        instance.setStatus(QuestStatus.PUBLISHED);
+        instance.setAccepterName(null);
+        instance.setAccepterUuid(null);
+        questManager.getPublicQuests(); // clean expired first
+        questManager.readdPublicQuest(instance);
+
+        gui.refresh();
     }
 
     /**
@@ -160,6 +212,23 @@ public class QuestListListener implements Listener {
 
         // 发放奖励
         questManager.giveRewards(player, template.getRewards());
+
+        // 收集任务完成后，将提交的物品存入商店存量
+        String templateId = instance.getTemplateId();
+        if ((templateId.startsWith("RCL-") || templateId.startsWith("SHOP-"))
+                && HorizonKKShopHook.isAvailable()) {
+            String shopName = "玄岛矿石出售";
+            for (Map.Entry<String, Integer> entry : requiredItems.entrySet()) {
+                String itemId = entry.getKey();
+                int amount = entry.getValue();
+                int result = HorizonKKShopHook.addStock(shopName, itemId, amount);
+                if (result >= 0) {
+                    plugin.getLogger().info("[商店存量] 玩家 " + player.getName()
+                            + " 完成收集任务，已向商店 [" + shopName
+                            + "] 存入 " + itemId + " x" + amount);
+                }
+            }
+        }
 
         // 返还押金
         if (instance.hasDeposit()) {

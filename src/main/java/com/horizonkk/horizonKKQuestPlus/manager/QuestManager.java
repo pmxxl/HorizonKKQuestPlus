@@ -24,6 +24,9 @@ public class QuestManager {
     private final QuestGenerator questGenerator;
     private final Random random = new Random();
 
+    /** 玩家最大接取任务数 */
+    public static final int MAX_ACCEPTED_QUESTS = 5;
+
     // 公共悬赏池 (全服可见)
     private final List<QuestInstance> publicQuestPool = new ArrayList<>();
 
@@ -543,6 +546,13 @@ public class QuestManager {
     }
 
     private boolean doAccept(Player player, QuestInstance instance) {
+        // 检查接取数量上限
+        int currentCount = playerDataManager.getAcceptedQuestCount(player.getUniqueId());
+        if (currentCount >= MAX_ACCEPTED_QUESTS) {
+            player.sendMessage(colorize("&c你已接取了 " + MAX_ACCEPTED_QUESTS + " 个悬赏，请先完成或放弃后再接取!"));
+            return false;
+        }
+
         String templateId = instance.getTemplateId();
         plugin.getLogger().info("[DEBUG] 尝试接取任务，模板ID: " + templateId);
         plugin.getLogger().info("[DEBUG] 可用模板IDs: " + configManager.getQuestTemplateIds());
@@ -978,7 +988,23 @@ public class QuestManager {
 
     public List<QuestInstance> getPublicQuests() {
         cleanExpiredPublicQuests();
-        return new ArrayList<>(publicQuestPool);
+        // 仅返回状态为 PUBLISHED 的任务，过滤掉已被接取的
+        List<QuestInstance> result = new ArrayList<>();
+        for (QuestInstance instance : publicQuestPool) {
+            if (instance.getStatus() == QuestStatus.PUBLISHED) {
+                result.add(instance);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * 将任务重新放回公共悬赏池（用于放弃任务后重新上架）
+     */
+    public void readdPublicQuest(QuestInstance instance) {
+        if (!publicQuestPool.contains(instance)) {
+            publicQuestPool.add(instance);
+        }
     }
 
     public List<QuestInstance> getAcceptedQuests(UUID uuid) {
