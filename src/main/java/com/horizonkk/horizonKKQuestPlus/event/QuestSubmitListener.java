@@ -218,8 +218,10 @@ public class QuestSubmitListener implements Listener {
         // 发放奖励
         questManager.giveRewards(player, holder.getQuestConfig().getRewards());
 
-        // 随机收集任务完成后，将提交的物品存入商店存量
-        if (instance.getTemplateId().startsWith("RCL-") && HorizonKKShopHook.isAvailable()) {
+        // 收集任务完成后，将提交的物品存入商店存量
+        String templateId = instance.getTemplateId();
+        if ((templateId.startsWith("RCL-") || templateId.startsWith("SHOP-"))
+                && HorizonKKShopHook.isAvailable()) {
             String shopName = "玄岛矿石出售";
             Map<String, Integer> requiredItems = holder.getRequiredItems();
             for (Map.Entry<String, Integer> entry : requiredItems.entrySet()) {
