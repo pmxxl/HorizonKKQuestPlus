@@ -1,9 +1,12 @@
 package com.horizonkk.horizonKKQuestPlus.hook;
 
 import com.horizonkk.horizonKKShopPlus.api.HorizonKKShopAPI;
+import com.horizonkk.horizonKKShopPlus.model.ShopConfig;
+import com.horizonkk.horizonKKShopPlus.model.ShopItem;
 import org.bukkit.Bukkit;
 
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -34,14 +37,117 @@ public class HorizonKKShopHook {
         return isAvailable && apiInstance != null;
     }
 
+    // ==================== 商店配置查询 ====================
+
+    /**
+     * 获取商店配置对象
+     * @param shopName 商店名
+     * @return ShopConfig，不存在返回 null
+     */
+    public static ShopConfig getShopConfig(String shopName) {
+        if (!isAvailable()) return null;
+        return apiInstance.getShopConfig(shopName);
+    }
+
+    /**
+     * 获取商店中所有槽位的物品信息
+     * @param shopName 商店名
+     * @return slot → ShopItem 映射，不存在返回空 Map
+     */
+    public static Map<Integer, ShopItem> getAllShopItems(String shopName) {
+        ShopConfig config = getShopConfig(shopName);
+        if (config == null) return Collections.emptyMap();
+        return config.getAllSlots();
+    }
+
+    /**
+     * 获取商店中所有物品的存量缺口
+     * @param shopName 商店名
+     * @return itemId → deficit 映射，仅包含 deficit > 0 的物品
+     */
+    public static Map<String, Integer> getItemDeficits(String shopName) {
+        if (!isAvailable()) return Collections.emptyMap();
+
+        ShopConfig config = getShopConfig(shopName);
+        if (config == null || !config.isStockEnabled()) return Collections.emptyMap();
+
+        Map<String, Integer> deficits = new LinkedHashMap<>();
+        for (Map.Entry<Integer, ShopItem> entry : config.getAllSlots().entrySet()) {
+            int slot = entry.getKey();
+            String itemId = entry.getValue().getItemId();
+            int deficit = apiInstance.getStockDeficit(shopName, slot);
+            if (deficit > 0) {
+                // 同一物品可能出现在多个槽位，累加缺口
+                deficits.merge(itemId, deficit, Integer::sum);
+            }
+        }
+        return deficits;
+    }
+
+    // ==================== 存量查询 ====================
+
+    /**
+     * 获取指定槽位的最大存量
+     */
+    public static int getMaxStock(String shopName, int slot) {
+        if (!isAvailable()) return -1;
+        return apiInstance.getMaxStock(shopName, slot);
+    }
+
+    /**
+     * 按物品ID获取最大存量
+     */
+    public static int getMaxStock(String shopName, String itemId) {
+        if (!isAvailable()) return -1;
+        return apiInstance.getMaxStock(shopName, itemId);
+    }
+
+    /**
+     * 获取指定槽位的存量缺口（maxStock - currentStock）
+     */
+    public static int getStockDeficit(String shopName, int slot) {
+        if (!isAvailable()) return -1;
+        return apiInstance.getStockDeficit(shopName, slot);
+    }
+
+    /**
+     * 按物品ID获取存量缺口
+     */
+    public static int getStockDeficit(String shopName, String itemId) {
+        if (!isAvailable()) return -1;
+        return apiInstance.getStockDeficit(shopName, itemId);
+    }
+
+    // ==================== 价格查询 ====================
+
+    /**
+     * 获取指定槽位物品的购买单价
+     */
+    public static int getBuyPrice(String shopName, int slot) {
+        if (!isAvailable()) return -1;
+        return apiInstance.getBuyPrice(shopName, slot);
+    }
+
+    /**
+     * 获取指定物品的购买单价
+     */
+    public static int getBuyPrice(String shopName, String itemId) {
+        if (!isAvailable()) return -1;
+        return apiInstance.getBuyPrice(shopName, itemId);
+    }
+
+    /**
+     * 获取指定物品的灵石类型key
+     */
+    public static String getBuyStoneKey(String shopName, String itemId) {
+        if (!isAvailable()) return null;
+        return apiInstance.getBuyStoneKey(shopName, itemId);
+    }
+
     // ==================== 存量操作 ====================
 
     /**
      * 按物品ID增加指定商店的存量
-     * @param shopName 商店名
-     * @param itemId 物品ID
-     * @param amount 增加数量
-     * @return 操作后该物品的总存量，-1 表示失败
      */
     public static int addStock(String shopName, String itemId, int amount) {
         if (!isAvailable()) return -1;
@@ -50,10 +156,6 @@ public class HorizonKKShopHook {
 
     /**
      * 按槽位增加指定商店的存量
-     * @param shopName 商店名
-     * @param slot 槽位号
-     * @param amount 增加数量
-     * @return 操作后的存量，-1 表示商店不存在
      */
     public static int addStock(String shopName, int slot, int amount) {
         if (!isAvailable()) return -1;
@@ -62,9 +164,6 @@ public class HorizonKKShopHook {
 
     /**
      * 按物品ID查询指定商店的存量
-     * @param shopName 商店名
-     * @param itemId 物品ID
-     * @return 当前存量，-1 表示无限量或不存在
      */
     public static int getStock(String shopName, String itemId) {
         if (!isAvailable()) return -1;
@@ -73,9 +172,6 @@ public class HorizonKKShopHook {
 
     /**
      * 按槽位查询存量
-     * @param shopName 商店名
-     * @param slot 槽位号
-     * @return 当前存量，-1 表示无限量或不存在
      */
     public static int getStock(String shopName, int slot) {
         if (!isAvailable()) return -1;
@@ -84,10 +180,6 @@ public class HorizonKKShopHook {
 
     /**
      * 按物品ID设置存量
-     * @param shopName 商店名
-     * @param itemId 物品ID
-     * @param amount 设置的存量值
-     * @return 操作后的存量，-1 表示失败
      */
     public static int setStock(String shopName, String itemId, int amount) {
         if (!isAvailable()) return -1;
@@ -96,10 +188,6 @@ public class HorizonKKShopHook {
 
     /**
      * 按槽位设置存量
-     * @param shopName 商店名
-     * @param slot 槽位号
-     * @param amount 设置的存量值
-     * @return 操作后的存量，-1 表示失败
      */
     public static int setStock(String shopName, int slot, int amount) {
         if (!isAvailable()) return -1;
@@ -108,8 +196,6 @@ public class HorizonKKShopHook {
 
     /**
      * 重置指定商店指定物品的存量为初始配置值
-     * @param shopName 商店名
-     * @param itemId 物品ID
      */
     public static void resetStock(String shopName, String itemId) {
         if (!isAvailable()) return;
@@ -118,8 +204,6 @@ public class HorizonKKShopHook {
 
     /**
      * 获取商店所有槽位的当前存量
-     * @param shopName 商店名
-     * @return 槽位号 -> 当前存量的映射，空Map表示商店不存在或未开启存量
      */
     public static Map<Integer, Integer> getShopStocks(String shopName) {
         if (!isAvailable()) return Collections.emptyMap();
@@ -130,7 +214,6 @@ public class HorizonKKShopHook {
 
     /**
      * 获取所有已注册的商店名
-     * @return 商店名集合
      */
     public static Set<String> getAllShopNames() {
         if (!isAvailable()) return Collections.emptySet();
@@ -139,8 +222,6 @@ public class HorizonKKShopHook {
 
     /**
      * 检查商店是否存在
-     * @param shopName 商店名
-     * @return 是否存在
      */
     public static boolean shopExists(String shopName) {
         if (!isAvailable()) return false;
@@ -149,8 +230,6 @@ public class HorizonKKShopHook {
 
     /**
      * 检查商店是否开启了存量功能
-     * @param shopName 商店名
-     * @return 是否开启存量
      */
     public static boolean isStockEnabled(String shopName) {
         if (!isAvailable()) return false;

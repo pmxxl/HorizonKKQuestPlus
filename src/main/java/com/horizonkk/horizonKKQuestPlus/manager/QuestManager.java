@@ -1,6 +1,7 @@
 package com.horizonkk.horizonKKQuestPlus.manager;
 
 import com.horizonkk.horizonKKQuestPlus.HorizonKKQuestPlus;
+import com.horizonkk.horizonKKQuestPlus.hook.HorizonKKShopHook;
 import com.horizonkk.horizonKKQuestPlus.hook.NeigeitemsHook;
 import com.horizonkk.horizonKKQuestPlus.model.*;
 import org.bukkit.Bukkit;
@@ -110,6 +111,15 @@ public class QuestManager {
             newPublic.addAll(randomQuests);
         }
 
+        // 发布商店缺口补货任务
+        if (HorizonKKShopHook.isAvailable()) {
+            List<QuestInstance> deficitQuests = publishShopDeficitQuests(configManager.getRandomCollectCount());
+            if (!deficitQuests.isEmpty()) {
+                newPublic.addAll(deficitQuests);
+                plugin.getLogger().info("发布 " + deficitQuests.size() + " 个商店补货任务");
+            }
+        }
+
         // 清理过期公共悬赏
         cleanExpiredPublicQuests();
 
@@ -163,6 +173,214 @@ public class QuestManager {
         }
 
         return newQuests;
+    }
+
+    /**
+     * 发布商店缺口驱动的随机收集任务
+     * <p>
+     * 读取"玄岛矿石出售"商店的存量缺口，按缺口大小加权选择物品，
+     * 生成收集任务。玩家完成后自动补货到商店，形成动态供需循环。
+     *
+     * @param count 要生成的任务数量
+     * @return 新发布的任务列表
+     */
+    public List<QuestInstance> publishShopDeficitQuests(int count) {
+        List<QuestInstance> newQuests = new ArrayList<>();
+        if (!HorizonKKShopHook.isAvailable()) return newQuests;
+
+        String shopName = "玄岛矿石出售";
+        if (!HorizonKKShopHook.shopExists(shopName)
+                || !HorizonKKShopHook.isStockEnabled(shopName)) {
+            return newQuests;
+        }
+
+        // 1. 获取所有物品的存量缺口
+        Map<String, Integer> deficits = HorizonKKShopHook.getItemDeficits(shopName);
+        if (deficits.isEmpty()) return newQuests;
+
+        // 2. 过滤：仅保留在 collectItems 中有定义的物品（有价值才能算奖励）
+        Map<String, Integer> validDeficits = new LinkedHashMap<>();
+        for (Map.Entry<String, Integer> entry : deficits.entrySet()) {
+            if (configManager.getCollectItem(entry.getKey()) != null) {
+                validDeficits.put(entry.getKey(), entry.getValue());
+            }
+        }
+        if (validDeficits.isEmpty()) return newQuests;
+
+        // 3. 按缺口加权随机选取物品，生成指定数量的任务
+        for (int i = 0; i < count; i++) {
+            QuestInstance quest = generateSingleDeficitQuest(validDeficits, shopName);
+            if (quest != null) {
+                newQuests.add(quest);
+            }
+        }
+
+        return newQuests;
+    }
+
+    /**
+     * 生成单个缺口驱动的收集任务
+     * <p>
+     * 随机选择 1~3 种缺口最大的物品，数量取缺口和 maxAmount 的较小值。
+     */
+    private QuestInstance generateSingleDeficitQuest(Map<String, Integer> deficits, String shopName) {
+        // 按缺口降序排列，取前 N 个作为候选
+        List<Map.Entry<String, Integer>> sorted = new ArrayList<>(deficits.entrySet());
+        sorted.sort((a, b) -> b.getValue() - a.getValue());
+
+        // 随机选 1~3 种物品（按缺口加权）
+        int itemCount = Math.min(1 + random.nextInt(3), sorted.size());
+        Map<String, Integer> selected = weightedSelectByDeficit(sorted, itemCount);
+
+        if (selected.isEmpty()) return null;
+
+        // 计算每种物品的需求量 = min(缺口, maxAmount)，至少 1
+        Map<String, Integer> itemAmounts = new LinkedHashMap<>();
+        int totalValue = 0;
+        for (Map.Entry<String, Integer> entry : selected.entrySet()) {
+            String itemId = entry.getKey();
+            int deficit = entry.getValue();
+            CollectItemConfig itemConfig = configManager.getCollectItem(itemId);
+            if (itemConfig == null) continue;
+
+            int amount = Math.max(1, Math.min(deficit, itemConfig.getMaxAmount()));
+            itemAmounts.put(itemId, amount);
+            totalValue += itemConfig.getValue() * amount;
+        }
+
+        if (itemAmounts.isEmpty()) return null;
+
+        // 计算奖励（应用浮动倍率）
+        int rewardValue = applyRewardMultiplier(totalValue);
+
+        // 根据总价值确定任务等级
+        QuestLevel level = calculateLevelByValue(totalValue);
+
+        // 生成任务ID
+        String questId = "SHOP-" + UUID.randomUUID().toString().substring(0, 6);
+
+        // 构建奖励灵石
+        List<String> rewardStrings = new ArrayList<>();
+        String stoneKey = StoneConverter.getStoneKeyByLevel(level);
+        Map<String, Integer> stoneMap = StoneConverter.convertStone(stoneKey, rewardValue);
+        for (Map.Entry<String, Integer> entry : stoneMap.entrySet()) {
+            rewardStrings.add(entry.getKey() + ":" + entry.getValue());
+        }
+        List<RewardInfo> rewards = RewardInfo.parseList(rewardStrings);
+
+        // 获取物品显示名称
+        Map<String, String> itemNames = new LinkedHashMap<>();
+        for (String itemId : itemAmounts.keySet()) {
+            itemNames.put(itemId, getItemDisplayName(itemId));
+        }
+
+        // 构建描述
+        QuestRequirement requirement = new QuestRequirement(questId, level, itemAmounts, rewardValue);
+        List<String> descriptionLines = requirement.buildDescriptionList(itemNames);
+        String description = requirement.buildDescription(itemNames);
+
+        // 构建目标字符串
+        String target = buildTargetString(requirement);
+
+        // 获取模板（复用已有模板的过期时间配置）
+        List<QuestTemplate> templates = configManager.getQuestTemplates(level);
+        int expireDays = 7;
+        if (!templates.isEmpty()) {
+            expireDays = templates.get(random.nextInt(templates.size())).getRandomExpireDays();
+        }
+
+        // 创建任务配置
+        QuestConfig questConfig = new QuestConfig(
+                questId,
+                QuestType.COLLECT,
+                level,
+                target,
+                1,
+                rewards,
+                expireDays,
+                description,
+                descriptionLines,
+                true,
+                null
+        );
+        configManager.addQuestTemplate(questId, questConfig);
+
+        // 创建任务实例
+        QuestInstance instance = new QuestInstance(questId, questId, "系统悬赏",
+                null, true, true);
+        instance.setExpireInDays(expireDays);
+
+        allQuests.put(questId, instance);
+        publicQuestPool.add(instance);
+
+        plugin.getLogger().info("[商店缺口] 生成补货任务 " + questId
+                + " | 物品: " + itemAmounts.keySet()
+                + " | 总价值: " + totalValue
+                + " | 目标商店: " + shopName);
+
+        return instance;
+    }
+
+    /**
+     * 按缺口大小加权随机选取指定数量的物品
+     *
+     * @param sorted 按缺口降序排列的物品列表
+     * @param count  要选取的数量
+     * @return itemId → deficit 的映射
+     */
+    private Map<String, Integer> weightedSelectByDeficit(List<Map.Entry<String, Integer>> sorted, int count) {
+        Map<String, Integer> selected = new LinkedHashMap<>();
+        if (sorted.isEmpty()) return selected;
+
+        // 构建加权池：缺口越大，权重越高
+        List<String> pool = new ArrayList<>();
+        for (Map.Entry<String, Integer> entry : sorted) {
+            // 权重 = ceil(deficit / 10)，至少 1
+            int weight = Math.max(1, (int) Math.ceil(entry.getValue() / 10.0));
+            for (int w = 0; w < weight; w++) {
+                pool.add(entry.getKey());
+            }
+        }
+
+        // 从池中随机选取（去重）
+        Set<String> picked = new LinkedHashSet<>();
+        int maxAttempts = pool.size() * 2;
+        int attempts = 0;
+        while (picked.size() < count && attempts < maxAttempts) {
+            picked.add(pool.get(random.nextInt(pool.size())));
+            attempts++;
+        }
+
+        // 构建结果：从 sorted 中查找对应的 deficit
+        Map<String, Integer> deficitMap = new LinkedHashMap<>();
+        for (Map.Entry<String, Integer> entry : sorted) {
+            deficitMap.put(entry.getKey(), entry.getValue());
+        }
+        for (String itemId : picked) {
+            selected.put(itemId, deficitMap.getOrDefault(itemId, 0));
+        }
+        return selected;
+    }
+
+    /**
+     * 根据总价值确定任务等级
+     */
+    private QuestLevel calculateLevelByValue(int totalValue) {
+        if (totalValue >= 500) return QuestLevel.SKY;
+        if (totalValue >= 200) return QuestLevel.EARTH;
+        if (totalValue >= 50) return QuestLevel.MYSTERY;
+        return QuestLevel.HUMAN;
+    }
+
+    /**
+     * 应用奖励浮动倍率
+     */
+    private int applyRewardMultiplier(int baseValue) {
+        if (!configManager.isRewardMultiplierEnabled()) {
+            return baseValue;
+        }
+        double multiplier = configManager.getRandomRewardMultiplier();
+        return Math.max(1, (int) Math.round(baseValue * multiplier));
     }
 
     /**
