@@ -196,43 +196,47 @@ public class QuestManager {
         return newQuests;
     }
 
+    /** 商店缺口任务的目标商店列表 */
+    private static final String[] DEFICIT_SHOPS = {"矿石出售", "草药出售"};
+
     /**
      * 发布商店缺口驱动的随机收集任务
      * <p>
-     * 读取"玄岛矿石出售"商店的存量缺口，按缺口大小加权选择物品，
-     * 生成收集任务。玩家完成后自动补货到商店，形成动态供需循环。
+     * 遍历所有配置的商店，读取存量缺口，按缺口大小加权选择物品，
+     * 生成收集任务。玩家完成后自动补货到对应商店，形成动态供需循环。
      *
-     * @param count 要生成的任务数量
+     * @param count 每个商店要生成的任务数量
      * @return 新发布的任务列表
      */
     public List<QuestInstance> publishShopDeficitQuests(int count) {
         List<QuestInstance> newQuests = new ArrayList<>();
         if (!HorizonKKShopHook.isAvailable()) return newQuests;
 
-        String shopName = "玄岛矿石出售";
-        if (!HorizonKKShopHook.shopExists(shopName)
-                || !HorizonKKShopHook.isStockEnabled(shopName)) {
-            return newQuests;
-        }
-
-        // 1. 获取所有物品的存量缺口
-        Map<String, Integer> deficits = HorizonKKShopHook.getItemDeficits(shopName);
-        if (deficits.isEmpty()) return newQuests;
-
-        // 2. 过滤：仅保留在 collectItems 中有定义的物品（有价值才能算奖励）
-        Map<String, Integer> validDeficits = new LinkedHashMap<>();
-        for (Map.Entry<String, Integer> entry : deficits.entrySet()) {
-            if (configManager.getCollectItem(entry.getKey()) != null) {
-                validDeficits.put(entry.getKey(), entry.getValue());
+        for (String shopName : DEFICIT_SHOPS) {
+            if (!HorizonKKShopHook.shopExists(shopName)
+                    || !HorizonKKShopHook.isStockEnabled(shopName)) {
+                continue;
             }
-        }
-        if (validDeficits.isEmpty()) return newQuests;
 
-        // 3. 按缺口加权随机选取物品，生成指定数量的任务
-        for (int i = 0; i < count; i++) {
-            QuestInstance quest = generateSingleDeficitQuest(validDeficits, shopName);
-            if (quest != null) {
-                newQuests.add(quest);
+            // 1. 获取所有物品的存量缺口
+            Map<String, Integer> deficits = HorizonKKShopHook.getItemDeficits(shopName);
+            if (deficits.isEmpty()) continue;
+
+            // 2. 过滤：仅保留在 collectItems 中有定义的物品（有价值才能算奖励）
+            Map<String, Integer> validDeficits = new LinkedHashMap<>();
+            for (Map.Entry<String, Integer> entry : deficits.entrySet()) {
+                if (configManager.getCollectItem(entry.getKey()) != null) {
+                    validDeficits.put(entry.getKey(), entry.getValue());
+                }
+            }
+            if (validDeficits.isEmpty()) continue;
+
+            // 3. 按缺口加权随机选取物品，生成指定数量的任务
+            for (int i = 0; i < count; i++) {
+                QuestInstance quest = generateSingleDeficitQuest(validDeficits, shopName);
+                if (quest != null) {
+                    newQuests.add(quest);
+                }
             }
         }
 

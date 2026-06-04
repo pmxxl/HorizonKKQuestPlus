@@ -10,6 +10,7 @@ import com.horizonkk.horizonKKQuestPlus.manager.QuestManager;
 import com.horizonkk.horizonKKQuestPlus.model.*;
 import com.horizonkk.horizonKKQuestPlus.hook.HorizonKKShopHook;
 import com.horizonkk.horizonKKQuestPlus.hook.NeigeitemsHook;
+import com.horizonkk.horizonKKShopPlus.model.ShopItem;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -124,17 +125,19 @@ public class ConfirmListener implements Listener {
         // 发放奖励
         questManager.giveRewards(player, template.getRewards());
 
-        // 商店补货
+        // 商店补货：根据物品所在商店自动补货
         String templateId = instance.getTemplateId();
         if ((templateId.startsWith("RCL-") || templateId.startsWith("SHOP-"))
                 && HorizonKKShopHook.isAvailable()) {
-            String shopName = "玄岛矿石出售";
             for (Map.Entry<String, Integer> entry : requiredItems.entrySet()) {
-                int result = HorizonKKShopHook.addStock(shopName, entry.getKey(), entry.getValue());
-                if (result >= 0) {
-                    plugin.getLogger().info("[商店存量] 玩家 " + player.getName()
-                            + " 完成收集任务，已向商店 [" + shopName
-                            + "] 存入 " + entry.getKey() + " x" + entry.getValue());
+                String shopName = findItemShop(entry.getKey());
+                if (shopName != null) {
+                    int result = HorizonKKShopHook.addStock(shopName, entry.getKey(), entry.getValue());
+                    if (result >= 0) {
+                        plugin.getLogger().info("[商店存量] 玩家 " + player.getName()
+                                + " 完成收集任务，已向商店 [" + shopName
+                                + "] 存入 " + entry.getKey() + " x" + entry.getValue());
+                    }
                 }
             }
         }
@@ -264,6 +267,21 @@ public class ConfirmListener implements Listener {
             return stoneItemId;
         }
         return stoneKey;
+    }
+
+    /**
+     * 查找物品所在的商店（遍历所有商店，返回第一个包含该物品的商店名）
+     */
+    private String findItemShop(String itemId) {
+        for (String shopName : HorizonKKShopHook.getAllShopNames()) {
+            Map<Integer, ShopItem> items = HorizonKKShopHook.getAllShopItems(shopName);
+            for (ShopItem shopItem : items.values()) {
+                if (itemId.equals(shopItem.getItemId())) {
+                    return shopName;
+                }
+            }
+        }
+        return null;
     }
 
     private String colorize(String s) {
