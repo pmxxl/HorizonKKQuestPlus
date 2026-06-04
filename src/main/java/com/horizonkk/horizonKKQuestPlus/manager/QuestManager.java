@@ -995,6 +995,8 @@ public class QuestManager {
                 result.add(instance);
             }
         }
+        // 反转列表，使最新的任务排在最后（最后一页）
+        Collections.reverse(result);
         return result;
     }
 
