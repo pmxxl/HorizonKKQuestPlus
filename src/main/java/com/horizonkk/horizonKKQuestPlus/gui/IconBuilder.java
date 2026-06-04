@@ -132,10 +132,15 @@ public class IconBuilder {
             lore.add(colorize("&7过期: &f" + instance.getExpireTimeDisplay()));
         }
 
-        // 进度条 (如果已接取)
+        // 进度条 + 操作提示 (已接取)
         if (instance.getStatus() == QuestStatus.ACCEPTED) {
             lore.add("");
             lore.add(colorize("&7进度: &f" + instance.getProgress() + "/" + template.getTargetAmount()));
+            lore.add("");
+            if (template.getType() == QuestType.COLLECT) {
+                lore.add(colorize("&a▶ 左键提交悬赏物品"));
+            }
+            lore.add(colorize("&c▶ 右键放弃该悬赏"));
         }
 
         // 操作提示

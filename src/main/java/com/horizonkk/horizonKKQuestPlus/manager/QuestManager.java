@@ -635,12 +635,6 @@ public class QuestManager {
         // 从公共悬赏池移除
         publicQuestPool.remove(instance);
 
-        // 给接取人一份悬赏令物品
-        ItemStack questItem = buildQuestItem(instance, template, instance.getPublisherName());
-        if (questItem != null) {
-            player.getInventory().addItem(questItem);
-        }
-
         String msg = template.getMessage("accepted");
         if (msg.isEmpty()) msg = "&a成功接取悬赏 &f%id% &a!";
         msg = msg.replace("%id%", instance.getQuestId())
