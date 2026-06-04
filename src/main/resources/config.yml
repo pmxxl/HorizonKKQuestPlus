@@ -113,7 +113,10 @@ random_collect:
 # 使用 @名称 来引用，如: value: "@1jie"
 values:
   1jie: 4
-  2jie: 8
+  2jie: 12
+  1jiecaoyao: 8
+  2jiecaoyao: 24
+
   3jie: 16
   4jie: 32
   5jie: 64
@@ -182,13 +185,91 @@ collect_items:
     value: "@1jie"
     max_amount: 20
 
-  # ========== 二阶材料 (价值 8) ==========
+  # ========== 二阶材料 (价值 12) ==========
   玄铁:
+    value: "@2jie"
+    max_amount: 15
+  紫金铜:
+    value: "@2jie"
+    max_amount: 15
+  破岩铁:
+    value: "@2jie"
+    max_amount: 15
+  白田玉:
+    value: "@2jie"
+    max_amount: 15
+  青金石:
+    value: "@2jie"
+    max_amount: 15
+  蓝光石:
+    value: "@2jie"
+    max_amount: 15
+  火焱石:
+    value: "@2jie"
+    max_amount: 15
+  姜黄石:
+    value: "@2jie"
+    max_amount: 15
+  冰心铁:
+    value: "@2jie"
+    max_amount: 15
+  风煞铁:
+    value: "@2jie"
+    max_amount: 15
+  雷云精铁:
+    value: "@2jie"
+    max_amount: 15
+  二阶朱砂:
     value: "@2jie"
     max_amount: 15
   # 秘银:
   #   value: "@2jie"
   #   max_amount: 12
+
+# 草药
+  聚灵草:
+    value: "@1jiecaoyao"
+    max_amount: 15
+  黄灵芝:
+    value: "@1jiecaoyao"
+    max_amount: 15
+  赤血参:
+    value: "@1jiecaoyao"
+    max_amount: 15
+  凝气果:
+    value: "@1jiecaoyao"
+    max_amount: 15
+  幻心草:
+    value: "@1jiecaoyao"
+    max_amount: 15
+
+  天灵果:
+    value: "@2jiecaoyao"   # 实际值为 24
+    max_amount: 15
+  玉髓芝:
+    value: "@2jiecaoyao"   # 实际值为 24
+    max_amount: 15
+  伏龙藤:
+    value: "@2jiecaoyao"   # 实际值为 24
+    max_amount: 15
+  紫猴花:
+    value: "@2jiecaoyao"   # 实际值为 24
+    max_amount: 15
+  凝露草:
+    value: "@2jiecaoyao"   # 实际值为 24
+    max_amount: 15
+  雪灵芝:
+    value: "@2jiecaoyao"   # 实际值为 24
+    max_amount: 15
+  回春草:
+    value: "@2jiecaoyao"   # 实际值为 24
+    max_amount: 15
+  七星草:
+    value: "@2jiecaoyao"   # 实际值为 24
+    max_amount: 15
+  赤心金莲:
+    value: "@2jiecaoyao"   # 实际值为 24
+    max_amount: 15
 
 # ==================== 等级模板库 ====================
 # 每个等级定义多个模板，系统随机选取模板生成任务
