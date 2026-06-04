@@ -77,11 +77,19 @@ public class QuestListListener implements Listener {
             return;
         }
 
-        // 等级筛选按钮点击 (仅公共悬赏列表)
+        // 筛选按钮点击 (仅公共悬赏列表)
         if (holder.getListType() == QuestListHolder.ListType.PUBLIC) {
+            // 等级筛选
             QuestLevel filterLevel = getFilterLevelBySlot(slot);
             if (filterLevel != null) {
-                holder.toggleFilter(filterLevel);
+                holder.toggleLevelFilter(filterLevel);
+                gui.refresh();
+                return;
+            }
+            // 类型筛选
+            QuestType filterType = getFilterTypeBySlot(slot);
+            if (filterType != null) {
+                holder.toggleTypeFilter(filterType);
                 gui.refresh();
                 return;
             }
@@ -147,22 +155,9 @@ public class QuestListListener implements Listener {
         // 从玩家已接取列表中移除
         questManager.getPlayerDataManager().removeAcceptedQuest(player.getUniqueId(), instance.getQuestId());
 
-        // 返还押金
+        // 放弃任务不退还押金
         if (instance.hasDeposit()) {
-            List<RewardInfo> depositRewards = new ArrayList<>();
-            for (Map.Entry<String, Integer> entry : instance.getDepositStoneMap().entrySet()) {
-                depositRewards.add(new RewardInfo(entry.getKey(), entry.getValue(), null, 0, null));
-            }
-            questManager.giveRewards(player, depositRewards);
-
-            StringBuilder depositMsg = new StringBuilder("&7押金已退还: ");
-            boolean first = true;
-            for (Map.Entry<String, Integer> entry : instance.getDepositStoneMap().entrySet()) {
-                if (!first) depositMsg.append("&7, ");
-                depositMsg.append("&f").append(getStoneDisplayName(entry.getKey())).append(" &a×").append(entry.getValue());
-                first = false;
-            }
-            player.sendMessage(colorize(depositMsg.toString()));
+            player.sendMessage(colorize("&c放弃任务，押金不予退还"));
         }
 
         player.sendMessage(colorize("&c已放弃悬赏 &f" + instance.getQuestId()));
@@ -358,6 +353,17 @@ public class QuestListListener implements Listener {
         if (slot == QuestListGUI.FILTER_MYSTERY_SLOT) return QuestLevel.MYSTERY;
         if (slot == QuestListGUI.FILTER_EARTH_SLOT) return QuestLevel.EARTH;
         if (slot == QuestListGUI.FILTER_SKY_SLOT) return QuestLevel.SKY;
+        return null;
+    }
+
+    /**
+     * 根据槽位返回对应的筛选类型，非筛选槽位返回 null
+     */
+    private QuestType getFilterTypeBySlot(int slot) {
+        if (slot == QuestListGUI.FILTER_COLLECT_SLOT) return QuestType.COLLECT;
+        if (slot == QuestListGUI.FILTER_HUNT_SLOT) return QuestType.HUNT;
+        if (slot == QuestListGUI.FILTER_EXPLORE_SLOT) return QuestType.EXPLORE;
+        if (slot == QuestListGUI.FILTER_ESCORT_SLOT) return QuestType.ESCORT;
         return null;
     }
 

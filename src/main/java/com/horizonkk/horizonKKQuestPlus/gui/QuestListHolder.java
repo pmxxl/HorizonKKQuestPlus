@@ -2,6 +2,7 @@ package com.horizonkk.horizonKKQuestPlus.gui;
 
 import com.horizonkk.horizonKKQuestPlus.model.QuestInstance;
 import com.horizonkk.horizonKKQuestPlus.model.QuestLevel;
+import com.horizonkk.horizonKKQuestPlus.model.QuestType;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 
@@ -32,8 +33,9 @@ public class QuestListHolder implements InventoryHolder {
     private int currentPage = 1;
     private QuestListGUI gui;
 
-    // 玩家筛选状态（内存中，重启后重置）: UUID → 激活的等级集合
-    private static final Map<UUID, Set<QuestLevel>> PLAYER_FILTERS = new HashMap<>();
+    // 玩家筛选状态（内存中，重启后重置）
+    private static final Map<UUID, Set<QuestLevel>> PLAYER_LEVEL_FILTERS = new HashMap<>();
+    private static final Map<UUID, Set<QuestType>> PLAYER_TYPE_FILTERS = new HashMap<>();
 
     private final UUID playerUuid;
 
@@ -42,24 +44,37 @@ public class QuestListHolder implements InventoryHolder {
         this.playerUuid = playerUuid;
     }
 
-    /**
-     * 获取玩家的筛选状态，不存在则默认全部显示
-     */
-    public Set<QuestLevel> getActiveFilters() {
-        return PLAYER_FILTERS.computeIfAbsent(playerUuid, k -> EnumSet.allOf(QuestLevel.class));
+    // ==================== 等级筛选 ====================
+
+    public Set<QuestLevel> getActiveLevelFilters() {
+        return PLAYER_LEVEL_FILTERS.computeIfAbsent(playerUuid, k -> EnumSet.allOf(QuestLevel.class));
     }
 
-    /**
-     * 切换某等级的显示/隐藏
-     */
-    public void toggleFilter(QuestLevel level) {
-        Set<QuestLevel> filters = getActiveFilters();
+    public void toggleLevelFilter(QuestLevel level) {
+        Set<QuestLevel> filters = getActiveLevelFilters();
         if (filters.contains(level)) {
             filters.remove(level);
         } else {
             filters.add(level);
         }
     }
+
+    // ==================== 类型筛选 ====================
+
+    public Set<QuestType> getActiveTypeFilters() {
+        return PLAYER_TYPE_FILTERS.computeIfAbsent(playerUuid, k -> EnumSet.allOf(QuestType.class));
+    }
+
+    public void toggleTypeFilter(QuestType type) {
+        Set<QuestType> filters = getActiveTypeFilters();
+        if (filters.contains(type)) {
+            filters.remove(type);
+        } else {
+            filters.add(type);
+        }
+    }
+
+    // ==================== Getter/Setter ====================
 
     @Override
     public Inventory getInventory() {

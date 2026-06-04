@@ -5,9 +5,9 @@ package com.horizonkk.horizonKKQuestPlus.model;
  */
 public enum QuestLevel {
     HUMAN("rlp", "人级", "&2[&a人级&2]", 10168),
-    MYSTERY("xlp", "玄级", "&3[&b玄级&3]", 10169),
-    EARTH("dlp", "地级", "&5[&d地级&5]", 10170),
-    SKY("tlp", "天级", "&6[&e天级&6]", 10171);
+    MYSTERY("xlp", "玄级", "&3[&b玄级&3]", 10170),
+    EARTH("dlp", "地级", "&5[&d地级&5]", 10167),
+    SKY("tlp", "天级", "&6[&e天级&6]", 10169);
 
     private final String configKey;
     private final String displayName;
