@@ -41,6 +41,9 @@ public class ConfigManager {
     private int randomCollectMaxAmount = 50;
     private int randomCollectCount = 2;
 
+    // 商店缺口驱动模式（开启后全部任务由商店缺口生成，不使用模板池）
+    private boolean shopDeficitMode = false;
+
     // 等级权重
     private final Map<QuestLevel, Integer> levelWeights = new LinkedHashMap<>();
 
@@ -191,6 +194,7 @@ public class ConfigManager {
             randomCollectMinAmount = randomCollectSec.getInt("min_amount", 5);
             randomCollectMaxAmount = randomCollectSec.getInt("max_amount", 50);
             randomCollectCount = randomCollectSec.getInt("count", 2);
+            shopDeficitMode = randomCollectSec.getBoolean("shop_deficit_mode", false);
 
             // 加载等级权重
             ConfigurationSection weightsSec = randomCollectSec.getConfigurationSection("level_weights");
@@ -642,6 +646,10 @@ public class ConfigManager {
 
     public boolean isRandomCollectEnabled() {
         return randomCollectEnabled;
+    }
+
+    public boolean isShopDeficitMode() {
+        return shopDeficitMode;
     }
 
     public int getRandomCollectMinAmount() {

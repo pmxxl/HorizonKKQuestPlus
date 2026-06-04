@@ -86,40 +86,58 @@ public class QuestManager {
      */
     public List<QuestInstance> publishPublicQuests() {
         List<QuestInstance> newPublic = new ArrayList<>();
+        boolean shopDeficitActive = configManager.isShopDeficitMode() && HorizonKKShopHook.isAvailable();
+
+        // 模板池任务（商店缺口模式下跳过收集类，只发布非收集类）
         List<String> templateIds = new ArrayList<>(configManager.getQuestTemplates().keySet());
-        if (templateIds.isEmpty()) return newPublic;
+        if (!templateIds.isEmpty()) {
+            Collections.shuffle(templateIds);
+            int count = Math.min(configManager.getPublicQuestCount(), templateIds.size());
 
-        Collections.shuffle(templateIds);
-        int count = Math.min(configManager.getPublicQuestCount(), templateIds.size());
+            for (int i = 0; i < count; i++) {
+                String templateId = templateIds.get(i);
+                QuestConfig template = configManager.getQuestTemplate(templateId);
+                if (template == null) continue;
 
-        for (int i = 0; i < count; i++) {
-            String templateId = templateIds.get(i);
-            QuestConfig template = configManager.getQuestTemplate(templateId);
-            if (template == null) continue;
+                // 商店缺口模式下，收集类任务由缺口驱动，跳过模板池中的收集类
+                if (shopDeficitActive && template.getType() == QuestType.COLLECT) {
+                    continue;
+                }
 
-            String questId = "PUB-" + UUID.randomUUID().toString().substring(0, 6);
+                String questId = "PUB-" + UUID.randomUUID().toString().substring(0, 6);
 
-            QuestInstance instance = new QuestInstance(questId, templateId, "匿名修士",
-                    null, true, true);
-            instance.setExpireInDays(template.getTimeLimit());
+                QuestInstance instance = new QuestInstance(questId, templateId, "匿名修士",
+                        null, true, true);
+                instance.setExpireInDays(template.getTimeLimit());
 
-            allQuests.put(questId, instance);
-            publicQuestPool.add(instance);
-            newPublic.add(instance);
+                allQuests.put(questId, instance);
+                publicQuestPool.add(instance);
+                newPublic.add(instance);
+            }
         }
 
-        // 发布随机收集任务
-        if (configManager.isRandomCollectEnabled()) {
-            List<QuestInstance> randomQuests = publishRandomCollectQuests();
-            newPublic.addAll(randomQuests);
-        }
-
-        // 发布商店缺口补货任务
-        if (HorizonKKShopHook.isAvailable()) {
-            List<QuestInstance> deficitQuests = publishShopDeficitQuests(configManager.getRandomCollectCount());
+        // 商店缺口模式：收集类任务全部由商店缺口驱动
+        if (shopDeficitActive) {
+            int deficitCount = configManager.getPublicQuestCount() + configManager.getRandomCollectCount();
+            List<QuestInstance> deficitQuests = publishShopDeficitQuests(deficitCount);
             if (!deficitQuests.isEmpty()) {
                 newPublic.addAll(deficitQuests);
-                plugin.getLogger().info("发布 " + deficitQuests.size() + " 个商店补货任务");
+                plugin.getLogger().info("商店缺口模式: 发布 " + deficitQuests.size() + " 个收集补货任务");
+            }
+        } else {
+            // 普通模式：发布随机收集任务
+            if (configManager.isRandomCollectEnabled()) {
+                List<QuestInstance> randomQuests = publishRandomCollectQuests();
+                newPublic.addAll(randomQuests);
+            }
+
+            // 普通模式：发布商店缺口补充任务
+            if (HorizonKKShopHook.isAvailable()) {
+                List<QuestInstance> deficitQuests = publishShopDeficitQuests(configManager.getRandomCollectCount());
+                if (!deficitQuests.isEmpty()) {
+                    newPublic.addAll(deficitQuests);
+                    plugin.getLogger().info("发布 " + deficitQuests.size() + " 个商店补货任务");
+                }
             }
         }
 
