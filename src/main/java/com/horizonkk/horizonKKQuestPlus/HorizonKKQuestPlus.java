@@ -6,6 +6,7 @@ import com.horizonkk.horizonKKQuestPlus.event.QuestMenuListener;
 import com.horizonkk.horizonKKQuestPlus.event.QuestProgressListener;
 import com.horizonkk.horizonKKQuestPlus.event.QuestPublishListener;
 import com.horizonkk.horizonKKQuestPlus.event.QuestSubmitListener;
+import com.horizonkk.horizonKKQuestPlus.hook.HorizonKKShopHook;
 import com.horizonkk.horizonKKQuestPlus.manager.ConfigManager;
 import com.horizonkk.horizonKKQuestPlus.manager.PlayerDataManager;
 import com.horizonkk.horizonKKQuestPlus.manager.QuestManager;
@@ -64,6 +65,14 @@ public final class HorizonKKQuestPlus extends JavaPlugin {
 
         // 启动公共悬赏定时发布
         startPublicQuestTask();
+
+        // 初始化商店钩子（在所有插件 onEnable 完成后加载 API 实例）
+        HorizonKKShopHook.reload();
+        if (HorizonKKShopHook.isAvailable()) {
+            getLogger().info("已连接 HorizonKKShopPlus 商店API");
+        } else {
+            getLogger().warning("未检测到 HorizonKKShopPlus，商店补货功能不可用");
+        }
 
         getLogger().info("HorizonKKQuestPlus 已启用! 加载了 "
                 + configManager.getQuestTemplateCount() + " 个任务模板");

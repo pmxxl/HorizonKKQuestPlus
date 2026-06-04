@@ -19,17 +19,19 @@ public class HorizonKKShopHook {
     private static HorizonKKShopAPI apiInstance;
     private static boolean isAvailable = false;
 
-    static {
-        reload();
-    }
-
     /** 重新加载 API 实例（插件重载后调用） */
     public static void reload() {
         try {
             apiInstance = Bukkit.getServicesManager().load(HorizonKKShopAPI.class);
             isAvailable = apiInstance != null;
+            if (isAvailable) {
+                Bukkit.getLogger().info("[HorizonKKShopHook] 成功连接 HorizonKKShopPlus API");
+            } else {
+                Bukkit.getLogger().warning("[HorizonKKShopHook] HorizonKKShopAPI 未注册，商店功能不可用");
+            }
         } catch (Exception e) {
             isAvailable = false;
+            Bukkit.getLogger().warning("[HorizonKKShopHook] 加载 HorizonKKShopAPI 失败: " + e.getMessage());
         }
     }
 
