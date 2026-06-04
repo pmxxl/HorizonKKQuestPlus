@@ -9,6 +9,7 @@ import com.horizonkk.horizonKKQuestPlus.hook.HorizonKKShopHook;
 import com.horizonkk.horizonKKQuestPlus.hook.NeigeitemsHook;
 import com.horizonkk.horizonKKQuestPlus.manager.ConfigManager;
 import com.horizonkk.horizonKKQuestPlus.manager.QuestManager;
+import com.horizonkk.horizonKKQuestPlus.model.QuestConfig;
 import com.horizonkk.horizonKKQuestPlus.model.QuestInstance;
 import com.horizonkk.horizonKKQuestPlus.model.QuestStatus;
 import org.bukkit.Bukkit;
