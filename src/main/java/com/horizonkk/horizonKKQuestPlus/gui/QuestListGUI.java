@@ -4,9 +4,19 @@ import com.horizonkk.horizonKKQuestPlus.HorizonKKQuestPlus;
 import com.horizonkk.horizonKKQuestPlus.manager.ConfigManager;
 import com.horizonkk.horizonKKQuestPlus.manager.QuestManager;
 import com.horizonkk.horizonKKQuestPlus.model.QuestInstance;
+import com.horizonkk.horizonKKQuestPlus.model.QuestLevel;
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemFlag;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 
 import java.util.List;
 
@@ -30,6 +40,12 @@ public class QuestListGUI {
     public static final int BACK_SLOT = 49;
     public static final int NEXT_SLOT = 53;
 
+    // 等级筛选按钮槽位 (第一排)
+    public static final int FILTER_HUMAN_SLOT = 1;
+    public static final int FILTER_MYSTERY_SLOT = 3;
+    public static final int FILTER_EARTH_SLOT = 5;
+    public static final int FILTER_SKY_SLOT = 7;
+
     private final HorizonKKQuestPlus plugin;
     private final QuestManager questManager;
     private final ConfigManager configManager;
@@ -44,7 +60,7 @@ public class QuestListGUI {
         this.questManager = questManager;
         this.configManager = configManager;
         this.player = player;
-        this.holder = new QuestListHolder(listType);
+        this.holder = new QuestListHolder(listType, player.getUniqueId());
         this.holder.setGui(this);
         this.holder.getQuests().addAll(quests);
     }
@@ -74,6 +90,16 @@ public class QuestListGUI {
         switch (holder.getListType()) {
             case PUBLIC:
                 quests = questManager.getPublicQuests();
+                // 应用等级筛选
+                Set<QuestLevel> filters = holder.getActiveFilters();
+                if (filters.size() < QuestLevel.values().length) {
+                    quests = quests.stream()
+                            .filter(q -> {
+                                QuestConfig cfg = configManager.getQuestTemplate(q.getTemplateId());
+                                return cfg != null && filters.contains(cfg.getLevel());
+                            })
+                            .collect(java.util.stream.Collectors.toList());
+                }
                 break;
             case ACCEPTED:
                 quests = questManager.getAcceptedQuests(player.getUniqueId());
@@ -127,6 +153,15 @@ public class QuestListGUI {
 
         Inventory inv = Bukkit.createInventory(holder, 54, colorize(title));
 
+        // 公共悬赏列表 — 显示等级筛选按钮
+        if (holder.getListType() == QuestListHolder.ListType.PUBLIC) {
+            Set<QuestLevel> filters = holder.getActiveFilters();
+            inv.setItem(FILTER_HUMAN_SLOT, buildFilterButton(QuestLevel.HUMAN, filters.contains(QuestLevel.HUMAN)));
+            inv.setItem(FILTER_MYSTERY_SLOT, buildFilterButton(QuestLevel.MYSTERY, filters.contains(QuestLevel.MYSTERY)));
+            inv.setItem(FILTER_EARTH_SLOT, buildFilterButton(QuestLevel.EARTH, filters.contains(QuestLevel.EARTH)));
+            inv.setItem(FILTER_SKY_SLOT, buildFilterButton(QuestLevel.SKY, filters.contains(QuestLevel.SKY)));
+        }
+
         // 填充悬赏图标
         int startIdx = (page - 1) * PAGE_SIZE;
         for (int i = 0; i < PAGE_SIZE && (startIdx + i) < quests.size(); i++) {
@@ -145,7 +180,54 @@ public class QuestListGUI {
             inv.setItem(NEXT_SLOT, IconBuilder.buildNextPageButton(page));
         }
 
+        // 填充空位
+        for (int i = 0; i < 54; i++) {
+            if (inv.getItem(i) == null) {
+                inv.setItem(i, IconBuilder.buildFiller());
+            }
+        }
+
         return inv;
+    }
+
+    /**
+     * 构建等级筛选按钮
+     *
+     * @param level    等级
+     * @param active   是否选中（选中时附魔发光）
+     * @return 按钮物品
+     */
+    private ItemStack buildFilterButton(QuestLevel level, boolean active) {
+        Material material;
+        switch (level) {
+            case HUMAN:  material = Material.PAPER; break;
+            case MYSTERY: material = Material.PAPER; break;
+            case EARTH:  material = Material.PAPER; break;
+            case SKY:    material = Material.PAPER; break;
+            default:     material = Material.PAPER;
+        }
+
+        ItemStack item = new ItemStack(material);
+        ItemMeta meta = item.getItemMeta();
+        if (meta != null) {
+            meta.setCustomModelData(level.getCustomModelData());
+            String status = active ? "&a✔ 已显示" : "&c✘ 已隐藏";
+            meta.setDisplayName(colorize(level.getTag()));
+            List<String> lore = new ArrayList<>();
+            lore.add(colorize("&7等级: " + level.getDisplayName()));
+            lore.add(colorize("&7状态: " + status));
+            lore.add("");
+            lore.add(colorize("&e点击切换显示/隐藏"));
+            meta.setLore(lore);
+
+            if (active) {
+                meta.addEnchant(Enchantment.UNBREAKING, 1, true);
+                meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+            }
+
+            item.setItemMeta(meta);
+        }
+        return item;
     }
 
     private String colorize(String s) {

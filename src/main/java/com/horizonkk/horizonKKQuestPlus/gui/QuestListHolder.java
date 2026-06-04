@@ -1,11 +1,17 @@
 package com.horizonkk.horizonKKQuestPlus.gui;
 
 import com.horizonkk.horizonKKQuestPlus.model.QuestInstance;
+import com.horizonkk.horizonKKQuestPlus.model.QuestLevel;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
 /**
  * 悬赏列表 Holder (支持分页)
@@ -26,8 +32,33 @@ public class QuestListHolder implements InventoryHolder {
     private int currentPage = 1;
     private QuestListGUI gui;
 
-    public QuestListHolder(ListType listType) {
+    // 玩家筛选状态（内存中，重启后重置）: UUID → 激活的等级集合
+    private static final Map<UUID, Set<QuestLevel>> PLAYER_FILTERS = new HashMap<>();
+
+    private final UUID playerUuid;
+
+    public QuestListHolder(ListType listType, UUID playerUuid) {
         this.listType = listType;
+        this.playerUuid = playerUuid;
+    }
+
+    /**
+     * 获取玩家的筛选状态，不存在则默认全部显示
+     */
+    public Set<QuestLevel> getActiveFilters() {
+        return PLAYER_FILTERS.computeIfAbsent(playerUuid, k -> EnumSet.allOf(QuestLevel.class));
+    }
+
+    /**
+     * 切换某等级的显示/隐藏
+     */
+    public void toggleFilter(QuestLevel level) {
+        Set<QuestLevel> filters = getActiveFilters();
+        if (filters.contains(level)) {
+            filters.remove(level);
+        } else {
+            filters.add(level);
+        }
     }
 
     @Override

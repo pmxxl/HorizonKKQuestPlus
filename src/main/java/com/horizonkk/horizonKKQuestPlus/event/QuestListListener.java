@@ -8,6 +8,7 @@ import com.horizonkk.horizonKKQuestPlus.manager.ConfigManager;
 import com.horizonkk.horizonKKQuestPlus.manager.QuestManager;
 import com.horizonkk.horizonKKQuestPlus.model.QuestConfig;
 import com.horizonkk.horizonKKQuestPlus.model.QuestInstance;
+import com.horizonkk.horizonKKQuestPlus.model.QuestLevel;
 import com.horizonkk.horizonKKQuestPlus.model.QuestStatus;
 import com.horizonkk.horizonKKQuestPlus.model.QuestType;
 import com.horizonkk.horizonKKQuestPlus.model.RewardInfo;
@@ -74,6 +75,16 @@ public class QuestListListener implements Listener {
                 gui.goToPage(page + 1);
             }
             return;
+        }
+
+        // 等级筛选按钮点击 (仅公共悬赏列表)
+        if (holder.getListType() == QuestListHolder.ListType.PUBLIC) {
+            QuestLevel filterLevel = getFilterLevelBySlot(slot);
+            if (filterLevel != null) {
+                holder.toggleFilter(filterLevel);
+                gui.refresh();
+                return;
+            }
         }
 
         // 悬赏槽位点击 — 用槽位反算索引
@@ -337,6 +348,17 @@ public class QuestListListener implements Listener {
             return stoneItemId;
         }
         return stoneKey;
+    }
+
+    /**
+     * 根据槽位返回对应的筛选等级，非筛选槽位返回 null
+     */
+    private QuestLevel getFilterLevelBySlot(int slot) {
+        if (slot == QuestListGUI.FILTER_HUMAN_SLOT) return QuestLevel.HUMAN;
+        if (slot == QuestListGUI.FILTER_MYSTERY_SLOT) return QuestLevel.MYSTERY;
+        if (slot == QuestListGUI.FILTER_EARTH_SLOT) return QuestLevel.EARTH;
+        if (slot == QuestListGUI.FILTER_SKY_SLOT) return QuestLevel.SKY;
+        return null;
     }
 
     private String colorize(String s) {
