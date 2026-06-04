@@ -202,7 +202,7 @@ public class QuestManager {
     /**
      * 发布商店缺口驱动的随机收集任务
      * <p>
-     * 遍历所有配置的商店，读取存量缺口，按缺口大小加权选择物品，
+     * 根据配置的总库存量，平均分配到各物品，与当前库存对比计算缺口，
      * 生成收集任务。玩家完成后自动补货到对应商店，形成动态供需循环。
      *
      * @param count 每个商店要生成的任务数量
@@ -212,26 +212,51 @@ public class QuestManager {
         List<QuestInstance> newQuests = new ArrayList<>();
         if (!HorizonKKShopHook.isAvailable()) return newQuests;
 
+        int totalStock = configManager.getShopTotalStock();
+
         for (String shopName : DEFICIT_SHOPS) {
             if (!HorizonKKShopHook.shopExists(shopName)
                     || !HorizonKKShopHook.isStockEnabled(shopName)) {
                 continue;
             }
 
-            // 1. 获取所有物品的存量缺口
-            Map<String, Integer> deficits = HorizonKKShopHook.getItemDeficits(shopName);
-            if (deficits.isEmpty()) continue;
+            // 1. 获取商店中所有物品及其当前库存
+            Map<String, Integer> currentStocks = new LinkedHashMap<>();
+            Map<Integer, com.horizonkk.horizonKKShopPlus.model.ShopItem> shopItems =
+                    HorizonKKShopHook.getAllShopItems(shopName);
 
-            // 2. 过滤：仅保留在 collectItems 中有定义的物品（有价值才能算奖励）
+            for (com.horizonkk.horizonKKShopPlus.model.ShopItem shopItem : shopItems.values()) {
+                String itemId = shopItem.getItemId();
+                if (itemId == null || itemId.isEmpty()) continue;
+                int current = HorizonKKShopHook.getStock(shopName, itemId);
+                if (current < 0) current = 0; // 无限量商品视为 0
+                currentStocks.merge(itemId, current, Integer::sum); // 同物品多槽位累加
+            }
+            if (currentStocks.isEmpty()) continue;
+
+            // 2. 计算每个物品的目标库存 = 总量 / 物品种类数
+            int itemCount = currentStocks.size();
+            int targetPerItem = Math.max(1, totalStock / itemCount);
+
+            // 3. 计算缺口 = 目标 - 当前，仅保留正缺口且在 collectItems 中的物品
             Map<String, Integer> validDeficits = new LinkedHashMap<>();
-            for (Map.Entry<String, Integer> entry : deficits.entrySet()) {
-                if (configManager.getCollectItem(entry.getKey()) != null) {
-                    validDeficits.put(entry.getKey(), entry.getValue());
+            for (Map.Entry<String, Integer> entry : currentStocks.entrySet()) {
+                String itemId = entry.getKey();
+                int current = entry.getValue();
+                int deficit = targetPerItem - current;
+                if (deficit > 0 && configManager.getCollectItem(itemId) != null) {
+                    validDeficits.put(itemId, deficit);
                 }
             }
-            if (validDeficits.isEmpty()) continue;
+            if (validDeficits.isEmpty()) {
+                plugin.getLogger().info("[商店缺口] " + shopName + " 库存充足，无需补货任务");
+                continue;
+            }
 
-            // 3. 按缺口加权随机选取物品，生成指定数量的任务
+            plugin.getLogger().info("[商店缺口] " + shopName + " 目标=" + targetPerItem
+                    + "/物品, 缺口物品=" + validDeficits.size());
+
+            // 4. 按缺口加权随机选取物品，生成指定数量的任务
             for (int i = 0; i < count; i++) {
                 QuestInstance quest = generateSingleDeficitQuest(validDeficits, shopName);
                 if (quest != null) {

@@ -210,7 +210,8 @@ public class QuestCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage("§e/" + label + " open [玩家] §7- 为指定玩家打开菜单");
         sender.sendMessage("§e/" + label + " publish <模板ID> [anonymous|named] §7- 发布悬赏");
         sender.sendMessage("§e/" + label + " list <public|accepted|published> §7- 查看悬赏数量");
-        sender.sendMessage("§e/" + label + " test random [数量] §7- 测试发布随机收集任务");
+        sender.sendMessage("§e/" + label + " test random [数量] §7- 测试发布随机收集任务(模板池)");
+        sender.sendMessage("§e/" + label + " test deficit [数量] §7- 测试发布商店缺口任务");
         sender.sendMessage("§e/" + label + " test template <等级> §7- 测试指定等级的模板");
         sender.sendMessage("§e/" + label + " reload §7- 重载配置");
     }
@@ -231,12 +232,15 @@ public class QuestCommand implements CommandExecutor, TabCompleter {
             case "random":
                 handleTestRandom(sender, args, label);
                 break;
+            case "deficit":
+                handleTestDeficit(sender, args, label);
+                break;
             case "template":
                 handleTestTemplate(sender, args, label);
                 break;
             default:
                 sender.sendMessage("§c未知测试命令: " + subCommand);
-                sender.sendMessage("§7可用命令: random, template");
+                sender.sendMessage("§7可用命令: random, deficit, template");
                 break;
         }
     }
@@ -276,6 +280,51 @@ public class QuestCommand implements CommandExecutor, TabCompleter {
             sender.sendMessage("§7- §f" + quest.getQuestId() + " §7(状态: " + quest.getStatus().name() + ")");
         }
         sender.sendMessage("§a已添加到公共悬赏池，玩家可通过悬赏菜单查看");
+    }
+
+    /**
+     * 处理商店缺口任务测试
+     */
+    private void handleTestDeficit(CommandSender sender, String[] args, String label) {
+        int count = 1;
+        if (args.length >= 3) {
+            try {
+                count = Integer.parseInt(args[2]);
+                if (count < 1 || count > 10) {
+                    sender.sendMessage("§c数量必须在 1-10 之间!");
+                    return;
+                }
+            } catch (NumberFormatException e) {
+                sender.sendMessage("§c无效的数字: " + args[2]);
+                return;
+            }
+        }
+
+        if (!com.horizonkk.horizonKKQuestPlus.hook.HorizonKKShopHook.isAvailable()) {
+            sender.sendMessage("§cHorizonKKShopPlus 未连接，无法生成缺口任务!");
+            return;
+        }
+
+        sender.sendMessage("§a正在生成 " + count + " 个商店缺口任务...");
+
+        List<QuestInstance> quests = questManager.publishShopDeficitQuests(count);
+
+        if (quests.isEmpty()) {
+            sender.sendMessage("§c未生成任何任务! 可能原因:");
+            sender.sendMessage("§7- 商店库存已满（无缺口）");
+            sender.sendMessage("§7- 商店未开启存量功能");
+            sender.sendMessage("§7- collect_items 中无对应物品配置");
+            return;
+        }
+
+        sender.sendMessage("§a成功生成 " + quests.size() + " 个商店缺口任务:");
+        for (QuestInstance quest : quests) {
+            com.horizonkk.horizonKKQuestPlus.model.QuestConfig cfg =
+                    configManager.getQuestTemplate(quest.getTemplateId());
+            String target = cfg != null ? cfg.getTarget() : "?";
+            sender.sendMessage("§7- §f" + quest.getQuestId() + " §7target: §e" + target);
+        }
+        sender.sendMessage("§a已添加到公共悬赏池，完成后自动补货到对应商店");
     }
 
     /**

@@ -44,6 +44,9 @@ public class ConfigManager {
     // 商店缺口驱动模式（开启后全部任务由商店缺口生成，不使用模板池）
     private boolean shopDeficitMode = false;
 
+    // 商店总库存目标（每个商店的总库存量，平均分配到各物品）
+    private int shopTotalStock = 320;
+
     // 等级权重
     private final Map<QuestLevel, Integer> levelWeights = new LinkedHashMap<>();
 
@@ -195,6 +198,7 @@ public class ConfigManager {
             randomCollectMaxAmount = randomCollectSec.getInt("max_amount", 50);
             randomCollectCount = randomCollectSec.getInt("count", 2);
             shopDeficitMode = randomCollectSec.getBoolean("shop_deficit_mode", false);
+            shopTotalStock = randomCollectSec.getInt("shop_total_stock", 320);
 
             // 加载等级权重
             ConfigurationSection weightsSec = randomCollectSec.getConfigurationSection("level_weights");
@@ -650,6 +654,10 @@ public class ConfigManager {
 
     public boolean isShopDeficitMode() {
         return shopDeficitMode;
+    }
+
+    public int getShopTotalStock() {
+        return shopTotalStock;
     }
 
     public int getRandomCollectMinAmount() {
