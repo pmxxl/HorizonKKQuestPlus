@@ -101,6 +101,7 @@ random_collect:
   min_amount: 5            # 最小收集数量 (单个物品)
   max_amount: 50           # 默认最大收集数量 (单个物品)
   count: 2                 # 每次定时发布时，随机收集任务的数量
+  shop_deficit_mode: true
   # 等级权重 (控制各等级出现概率)
   level_weights:
     rlp: 40              # 人级权重

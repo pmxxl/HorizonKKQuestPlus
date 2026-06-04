@@ -91,8 +91,17 @@ public class QuestConfig {
             return items;
         }
 
+        // 跳过商店前缀: "@商店名|物品:数量,物品:数量"
+        String rawTarget = target;
+        if (rawTarget.startsWith("@")) {
+            int pipeIdx = rawTarget.indexOf('|');
+            if (pipeIdx >= 0) {
+                rawTarget = rawTarget.substring(pipeIdx + 1);
+            }
+        }
+
         // 解析格式: "物品ID1:数量1,物品ID2:数量2"
-        String[] pairs = target.split(",");
+        String[] pairs = rawTarget.split(",");
         for (String pair : pairs) {
             String[] parts = pair.trim().split(":");
             if (parts.length == 2) {
