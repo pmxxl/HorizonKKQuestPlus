@@ -7,7 +7,6 @@ import com.horizonkk.horizonKKQuestPlus.gui.QuestSubmitGUI;
 import com.horizonkk.horizonKKQuestPlus.gui.QuestSubmitHolder;
 import com.horizonkk.horizonKKQuestPlus.hook.HorizonKKShopHook;
 import com.horizonkk.horizonKKQuestPlus.hook.NeigeitemsHook;
-import com.horizonkk.horizonKKShopPlus.model.ShopItem;
 import com.horizonkk.horizonKKQuestPlus.manager.ConfigManager;
 import com.horizonkk.horizonKKQuestPlus.manager.QuestManager;
 import com.horizonkk.horizonKKQuestPlus.model.QuestInstance;
@@ -223,17 +222,16 @@ public class QuestSubmitListener implements Listener {
         String templateId = instance.getTemplateId();
         if ((templateId.startsWith("RCL-") || templateId.startsWith("SHOP-"))
                 && HorizonKKShopHook.isAvailable()) {
-            Map<String, Integer> requiredItems = holder.getRequiredItems();
-            for (Map.Entry<String, Integer> entry : requiredItems.entrySet()) {
-                String itemId = entry.getKey();
-                int amount = entry.getValue();
-                String shopName = findItemShop(itemId);
-                if (shopName != null) {
-                    int result = HorizonKKShopHook.addStock(shopName, itemId, amount);
+            QuestConfig template = holder.getQuestConfig();
+            String shopName = parseShopFromTarget(template.getTarget());
+            if (shopName != null) {
+                Map<String, Integer> requiredItems = holder.getRequiredItems();
+                for (Map.Entry<String, Integer> entry : requiredItems.entrySet()) {
+                    int result = HorizonKKShopHook.addStock(shopName, entry.getKey(), entry.getValue());
                     if (result >= 0) {
                         plugin.getLogger().info("[商店存量] 玩家 " + player.getName()
                                 + " 完成随机收集任务，已向商店 [" + shopName
-                                + "] 存入 " + itemId + " x" + amount);
+                                + "] 存入 " + entry.getKey() + " x" + entry.getValue());
                     }
                 }
             }
@@ -264,15 +262,14 @@ public class QuestSubmitListener implements Listener {
     }
 
     /**
-     * 查找物品所在的商店
+     * 从 target 字符串中解析商店名
+     * 格式: "@商店名|物品:数量,物品:数量" 或旧格式 "物品:数量,物品:数量"
      */
-    private String findItemShop(String itemId) {
-        for (String shopName : HorizonKKShopHook.getAllShopNames()) {
-            Map<Integer, ShopItem> items = HorizonKKShopHook.getAllShopItems(shopName);
-            for (ShopItem shopItem : items.values()) {
-                if (itemId.equals(shopItem.getItemId())) {
-                    return shopName;
-                }
+    private String parseShopFromTarget(String target) {
+        if (target != null && target.startsWith("@")) {
+            int pipeIdx = target.indexOf('|');
+            if (pipeIdx > 1) {
+                return target.substring(1, pipeIdx);
             }
         }
         return null;

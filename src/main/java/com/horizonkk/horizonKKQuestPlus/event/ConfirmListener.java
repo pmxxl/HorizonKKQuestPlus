@@ -10,7 +10,6 @@ import com.horizonkk.horizonKKQuestPlus.manager.QuestManager;
 import com.horizonkk.horizonKKQuestPlus.model.*;
 import com.horizonkk.horizonKKQuestPlus.hook.HorizonKKShopHook;
 import com.horizonkk.horizonKKQuestPlus.hook.NeigeitemsHook;
-import com.horizonkk.horizonKKShopPlus.model.ShopItem;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -125,13 +124,13 @@ public class ConfirmListener implements Listener {
         // 发放奖励
         questManager.giveRewards(player, template.getRewards());
 
-        // 商店补货：根据物品所在商店自动补货
+        // 商店补货：从 target 中读取商店名
         String templateId = instance.getTemplateId();
         if ((templateId.startsWith("RCL-") || templateId.startsWith("SHOP-"))
                 && HorizonKKShopHook.isAvailable()) {
-            for (Map.Entry<String, Integer> entry : requiredItems.entrySet()) {
-                String shopName = findItemShop(entry.getKey());
-                if (shopName != null) {
+            String shopName = parseShopFromTarget(template.getTarget());
+            if (shopName != null) {
+                for (Map.Entry<String, Integer> entry : requiredItems.entrySet()) {
                     int result = HorizonKKShopHook.addStock(shopName, entry.getKey(), entry.getValue());
                     if (result >= 0) {
                         plugin.getLogger().info("[商店存量] 玩家 " + player.getName()
@@ -270,15 +269,14 @@ public class ConfirmListener implements Listener {
     }
 
     /**
-     * 查找物品所在的商店（遍历所有商店，返回第一个包含该物品的商店名）
+     * 从 target 字符串中解析商店名
+     * 格式: "@商店名|物品:数量,物品:数量" 或旧格式 "物品:数量,物品:数量"
      */
-    private String findItemShop(String itemId) {
-        for (String shopName : HorizonKKShopHook.getAllShopNames()) {
-            Map<Integer, ShopItem> items = HorizonKKShopHook.getAllShopItems(shopName);
-            for (ShopItem shopItem : items.values()) {
-                if (itemId.equals(shopItem.getItemId())) {
-                    return shopName;
-                }
+    private String parseShopFromTarget(String target) {
+        if (target != null && target.startsWith("@")) {
+            int pipeIdx = target.indexOf('|');
+            if (pipeIdx > 1) {
+                return target.substring(1, pipeIdx);
             }
         }
         return null;

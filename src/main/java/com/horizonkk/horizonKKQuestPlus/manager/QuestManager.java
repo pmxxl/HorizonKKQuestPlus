@@ -304,8 +304,8 @@ public class QuestManager {
         List<String> descriptionLines = requirement.buildDescriptionList(itemNames);
         String description = requirement.buildDescription(itemNames);
 
-        // 构建目标字符串
-        String target = buildTargetString(requirement);
+        // 构建目标字符串（前缀记录来源商店，格式: @商店名|物品:数量,物品:数量）
+        String target = "@" + shopName + "|" + buildTargetString(requirement);
 
         // 获取模板（复用已有模板的过期时间配置）
         List<QuestTemplate> templates = configManager.getQuestTemplates(level);
