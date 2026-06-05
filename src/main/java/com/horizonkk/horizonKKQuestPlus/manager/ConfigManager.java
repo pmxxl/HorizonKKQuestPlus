@@ -47,6 +47,11 @@ public class ConfigManager {
     // 商店总库存目标（每个商店的总库存量，平均分配到各物品）
     private int shopTotalStock = 320;
 
+    // 等级价值区间（总价值 >= 阈值时对应该等级，从高到低判断）
+    private int skyMinValue = 500;
+    private int earthMinValue = 200;
+    private int mysteryMinValue = 50;
+
     // 等级权重
     private final Map<QuestLevel, Integer> levelWeights = new LinkedHashMap<>();
 
@@ -199,6 +204,14 @@ public class ConfigManager {
             randomCollectCount = randomCollectSec.getInt("count", 2);
             shopDeficitMode = randomCollectSec.getBoolean("shop_deficit_mode", false);
             shopTotalStock = randomCollectSec.getInt("shop_total_stock", 320);
+
+            // 加载等级价值区间
+            ConfigurationSection levelValueSec = randomCollectSec.getConfigurationSection("level_values");
+            if (levelValueSec != null) {
+                skyMinValue = levelValueSec.getInt("sky", 500);
+                earthMinValue = levelValueSec.getInt("earth", 200);
+                mysteryMinValue = levelValueSec.getInt("mystery", 50);
+            }
 
             // 加载等级权重
             ConfigurationSection weightsSec = randomCollectSec.getConfigurationSection("level_weights");
@@ -659,6 +672,10 @@ public class ConfigManager {
     public int getShopTotalStock() {
         return shopTotalStock;
     }
+
+    public int getSkyMinValue() { return skyMinValue; }
+    public int getEarthMinValue() { return earthMinValue; }
+    public int getMysteryMinValue() { return mysteryMinValue; }
 
     public int getRandomCollectMinAmount() {
         return randomCollectMinAmount;

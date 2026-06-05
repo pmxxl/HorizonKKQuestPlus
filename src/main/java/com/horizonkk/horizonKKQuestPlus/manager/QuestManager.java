@@ -416,9 +416,9 @@ public class QuestManager {
      * 根据总价值确定任务等级
      */
     private QuestLevel calculateLevelByValue(int totalValue) {
-        if (totalValue >= 500) return QuestLevel.SKY;
-        if (totalValue >= 200) return QuestLevel.EARTH;
-        if (totalValue >= 50) return QuestLevel.MYSTERY;
+        if (totalValue >= configManager.getSkyMinValue()) return QuestLevel.SKY;
+        if (totalValue >= configManager.getEarthMinValue()) return QuestLevel.EARTH;
+        if (totalValue >= configManager.getMysteryMinValue()) return QuestLevel.MYSTERY;
         return QuestLevel.HUMAN;
     }
 

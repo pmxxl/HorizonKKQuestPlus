@@ -103,6 +103,11 @@ random_collect:
   count: 2                 # 每次定时发布时，随机收集任务的数量
   shop_deficit_mode: true
   shop_total_stock: 3000
+  level_values:
+    sky: 3068       # 天级：总价值 ≥ 500
+    earth: 1024     # 地级：总价值 ≥ 200
+    mystery: 300    # 玄级：总价值 ≥ 50
+
 
   # 等级权重 (控制各等级出现概率)
   level_weights:
