@@ -552,6 +552,13 @@ public class QuestManager {
                 allQuests.remove(i.getQuestId());
                 return true;
             }
+            // 模板丢失的任务也清除（服务器重启后动态模板可能丢失）
+            if (configManager.getQuestTemplate(i.getTemplateId()) == null) {
+                plugin.getLogger().warning("清除无模板的公共悬赏: " + i.getQuestId()
+                        + " (模板: " + i.getTemplateId() + ")");
+                allQuests.remove(i.getQuestId());
+                return true;
+            }
             return false;
         });
     }
@@ -1029,10 +1036,11 @@ public class QuestManager {
 
     public List<QuestInstance> getPublicQuests() {
         cleanExpiredPublicQuests();
-        // 仅返回状态为 PUBLISHED 的任务，过滤掉已被接取的
+        // 仅返回状态为 PUBLISHED 且模板存在的任务
         List<QuestInstance> result = new ArrayList<>();
         for (QuestInstance instance : publicQuestPool) {
-            if (instance.getStatus() == QuestStatus.PUBLISHED) {
+            if (instance.getStatus() == QuestStatus.PUBLISHED
+                    && configManager.getQuestTemplate(instance.getTemplateId()) != null) {
                 result.add(instance);
             }
         }
@@ -1101,11 +1109,12 @@ public class QuestManager {
      * 保存悬赏数据到磁盘
      */
     public void saveToDisk() {
-        // 收集动态任务模板（以 RCL- 开头的）
+        // 收集动态任务模板（以 RCL- 或 SHOP- 开头的）
         Map<String, QuestConfig> dynamicTemplates = new LinkedHashMap<>();
         for (Map.Entry<String, QuestConfig> entry : configManager.getQuestTemplates().entrySet()) {
-            if (entry.getKey().startsWith("RCL-")) {
-                dynamicTemplates.put(entry.getKey(), entry.getValue());
+            String key = entry.getKey();
+            if (key.startsWith("RCL-") || key.startsWith("SHOP-")) {
+                dynamicTemplates.put(key, entry.getValue());
             }
         }
 

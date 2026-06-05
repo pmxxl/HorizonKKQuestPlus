@@ -87,9 +87,10 @@ public class QuestDataManager {
         YamlConfiguration yaml = new YamlConfiguration();
 
         for (Map.Entry<String, QuestConfig> entry : dynamicTemplates.entrySet()) {
-            // 只保存动态生成的模板（以 RCL- 开头）
-            if (entry.getKey().startsWith("RCL-")) {
-                yaml.set("templates." + entry.getKey(), serializeQuestConfig(entry.getValue()));
+            // 保存动态生成的模板（以 RCL- 或 SHOP- 开头）
+            String key = entry.getKey();
+            if (key.startsWith("RCL-") || key.startsWith("SHOP-")) {
+                yaml.set("templates." + key, serializeQuestConfig(entry.getValue()));
             }
         }
 
